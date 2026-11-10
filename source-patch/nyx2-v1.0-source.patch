@@ -1,0 +1,1698 @@
+diff --git a/CMakeModules/GenerateSCMRev.cmake b/CMakeModules/GenerateSCMRev.cmake
+index bdd14db..0cfc83d 100644
+--- a/CMakeModules/GenerateSCMRev.cmake
++++ b/CMakeModules/GenerateSCMRev.cmake
+@@ -22,9 +22,9 @@ elseif (DEFINED GIT_RELEASE)
+     set(GIT_REFSPEC "${GIT_RELEASE}")
+     set(IS_DEV_BUILD false)
+ else()
+-    string(SUBSTRING ${GIT_COMMIT} 0 10 BUILD_VERSION)
+-    set(BUILD_VERSION "${BUILD_VERSION}-${GIT_REFSPEC}")
+-    set(IS_DEV_BUILD true)
++    # Nyx2: versao propria do emulador (v1.0). O hash do git nao aparece para o usuario.
++    set(BUILD_VERSION "v1.0")
++    set(IS_DEV_BUILD false)
+ endif()
+ 
+ if (NIGHTLY_BUILD)
+@@ -37,19 +37,21 @@ set(GIT_DESC ${BUILD_VERSION})
+ 
+ # Generate cpp with Git revision from template
+ 
+-set(BUILD_AUTO_UPDATE_STABLE_REPO "zortos293/Lichii")
+-set(BUILD_AUTO_UPDATE_STABLE_API "api.github.com")
+-set(BUILD_AUTO_UPDATE_API_PATH "/repos/zortos293/Lichii/releases?per_page=100")
+-set(BUILD_AUTO_UPDATE_WEBSITE "https://github.com")
+-set(BUILD_AUTO_UPDATE_REPO "zortos293/Lichii")
++# Nyx2 v1: auto-update desligado. Com estes campos vazios o emulador nao consulta
++# nenhum servidor (nem o do fork original) em segundo plano.
++set(BUILD_AUTO_UPDATE_STABLE_REPO "")
++set(BUILD_AUTO_UPDATE_STABLE_API "")
++set(BUILD_AUTO_UPDATE_API_PATH "")
++set(BUILD_AUTO_UPDATE_WEBSITE "")
++set(BUILD_AUTO_UPDATE_REPO "")
+ if (NIGHTLY_BUILD)
+-    set(REPO_NAME "Lichii Nightly")
++    set(REPO_NAME "Nyx2 Nightly")
+ else()
+-    set(REPO_NAME "Lichii")
++    set(REPO_NAME "Nyx2")
+ endif()
+ 
+ set(BUILD_ID ${GIT_REFSPEC})
+-set(BUILD_FULLNAME "${REPO_NAME} ${BUILD_VERSION} ")
++set(BUILD_FULLNAME "${REPO_NAME} ${BUILD_VERSION}")
+ set(CXX_COMPILER "${CMAKE_CXX_COMPILER_ID} ${CMAKE_CXX_COMPILER_VERSION}")
+ 
+ configure_file(scm_rev.cpp.in scm_rev.cpp @ONLY)
+diff --git a/CMakeModules/NxFormat.cmake b/CMakeModules/NxFormat.cmake
+index 2b3b34e..63d49ac 100644
+--- a/CMakeModules/NxFormat.cmake
++++ b/CMakeModules/NxFormat.cmake
+@@ -15,7 +15,7 @@
+ set(LICHII_NXFORMAT_ROOT "" CACHE PATH "Unpacked nxformat release (empty: download the pinned one)")
+ set(LICHII_NXFORMAT_RUNTIME "" CACHE INTERNAL "")
+ 
+-function(lichii_find_nxformat)
++function(nyx2_find_nxformat)
+     set(version 1.0.0)
+     set(tag V1.0.0)
+     set(root "${LICHII_NXFORMAT_ROOT}")
+@@ -78,5 +78,5 @@ function(lichii_find_nxformat)
+ endfunction()
+ 
+ if (ENABLE_QT)
+-    lichii_find_nxformat()
++    nyx2_find_nxformat()
+ endif()
+diff --git a/dist/installer.nsi b/dist/installer.nsi
+index 6f6b18c..0407335 100644
+--- a/dist/installer.nsi
++++ b/dist/installer.nsi
+@@ -20,8 +20,8 @@
+ Unicode true
+ ManifestDPIAware true
+ 
+-!define PRODUCT_NAME "Lichii"
+-!define PRODUCT_PUBLISHER "Lichii contributors"
++!define PRODUCT_NAME "Nyx2"
++!define PRODUCT_PUBLISHER "Nyx2 contributors"
+ !define PRODUCT_WEB_SITE "https://github.com/zortos293/Eglantine"
+ !define PRODUCT_DIR_REGKEY "Software\Microsoft\Windows\CurrentVersion\App Paths\${PRODUCT_NAME}.exe"
+ !define PRODUCT_UNINST_KEY "Software\Microsoft\Windows\CurrentVersion\Uninstall\${PRODUCT_NAME}"
+@@ -40,7 +40,7 @@ ShowUnInstDetails show
+ !include "nsDialogs.nsh"
+ 
+ ; MUI Settings
+-!define MUI_ICON "lichii.ico"
++!define MUI_ICON "nyx2.ico"
+ !define MUI_UNICON "${NSISDIR}\Contrib\Graphics\Icons\modern-uninstall.ico"
+ 
+ ; License page
+@@ -52,7 +52,7 @@ Page custom desktopShortcutPageCreate desktopShortcutPageLeave
+ ; Instfiles page
+ !insertmacro MUI_PAGE_INSTFILES
+ ; Finish page
+-!define MUI_FINISHPAGE_RUN "$INSTDIR\lichii.exe"
++!define MUI_FINISHPAGE_RUN "$INSTDIR\Nyx2.exe"
+ !insertmacro MUI_PAGE_FINISH
+ 
+ ; Uninstaller pages
+@@ -124,9 +124,9 @@ Section "Base"
+   File /r "${BINARY_SOURCE_DIR}\*"
+ 
+   ; Create start menu and desktop shortcuts
+-  CreateShortCut "$SMPROGRAMS\$(^Name).lnk" "$INSTDIR\lichii.exe"
++  CreateShortCut "$SMPROGRAMS\$(^Name).lnk" "$INSTDIR\Nyx2.exe"
+   ${If} $DesktopShortcut == 1
+-    CreateShortCut "$DESKTOP\$(^Name).lnk" "$INSTDIR\lichii.exe"
++    CreateShortCut "$DESKTOP\$(^Name).lnk" "$INSTDIR\Nyx2.exe"
+   ${EndIf}
+ SectionEnd
+ 
+@@ -135,12 +135,12 @@ SectionEnd
+ Section -Post
+   WriteUninstaller "$INSTDIR\uninst.exe"
+ 
+-  WriteRegStr HKCU "${PRODUCT_DIR_REGKEY}" "" "$INSTDIR\lichii.exe"
++  WriteRegStr HKCU "${PRODUCT_DIR_REGKEY}" "" "$INSTDIR\Nyx2.exe"
+ 
+   ; Write metadata for add/remove programs applet
+   WriteRegStr HKCU "${PRODUCT_UNINST_KEY}" "DisplayName" "$(^Name)"
+   WriteRegStr HKCU "${PRODUCT_UNINST_KEY}" "UninstallString" "$INSTDIR\uninst.exe"
+-  WriteRegStr HKCU "${PRODUCT_UNINST_KEY}" "DisplayIcon" "$INSTDIR\lichii.exe"
++  WriteRegStr HKCU "${PRODUCT_UNINST_KEY}" "DisplayIcon" "$INSTDIR\Nyx2.exe"
+   WriteRegStr HKCU "${PRODUCT_UNINST_KEY}" "URLInfoAbout" "${PRODUCT_WEB_SITE}"
+   WriteRegStr HKCU "${PRODUCT_UNINST_KEY}" "Publisher" "${PRODUCT_PUBLISHER}"
+   WriteRegStr HKCU "${PRODUCT_UNINST_KEY}" "InstallLocation" "$INSTDIR"
+@@ -152,8 +152,8 @@ Section -Post
+   WriteRegStr HKCU "Software\Classes\.xci" "" "$(^Name)"
+   WriteRegStr HKCU "Software\Classes\.nro" "" "$(^Name)"
+   WriteRegStr HKCU "Software\Classes\.kip" "" "$(^Name)"
+-  WriteRegStr HKCU "Software\Classes\$(^Name)\DefaultIcon" "" "$INSTDIR\lichii.exe,0"
+-  WriteRegStr HKCU "Software\Classes\$(^Name)\Shell\open\command" "" '"$INSTDIR\lichii.exe" %1'
++  WriteRegStr HKCU "Software\Classes\$(^Name)\DefaultIcon" "" "$INSTDIR\Nyx2.exe,0"
++  WriteRegStr HKCU "Software\Classes\$(^Name)\Shell\open\command" "" '"$INSTDIR\Nyx2.exe" %1'
+ SectionEnd
+ 
+ Section Uninstall
+@@ -161,7 +161,7 @@ Section Uninstall
+   Delete "$SMPROGRAMS\$(^Name).lnk"
+ 
+   ; Be a bit careful to not delete files a user may have put into the install directory.
+-  Delete "$INSTDIR\lichii.exe"
++  Delete "$INSTDIR\Nyx2.exe"
+   Delete "$INSTDIR\eden-cli.exe"
+   Delete "$INSTDIR\uninst.exe"
+   Delete "$INSTDIR\LICENSE.txt"
+diff --git a/dist/nx2_switches.txt b/dist/nx2_switches.txt
+index 095ecde..132595a 100644
+--- a/dist/nx2_switches.txt
++++ b/dist/nx2_switches.txt
+@@ -1,4 +1,4 @@
+-# Switch NX2 - read when the Lichii GUI starts.
++# Switch NX2 - read when the Nyx2 GUI starts.
+ # One NAME=VALUE per line. Lines starting with # are ignored.
+ # A variable already set in the environment wins over this file.
+ # Between files, the user copy (%APPDATA%\eden\nx2_switches.txt, or
+diff --git a/dist/qt_themes/default/default.qrc b/dist/qt_themes/default/default.qrc
+index 6d2cbda..8dceb9e 100644
+--- a/dist/qt_themes/default/default.qrc
++++ b/dist/qt_themes/default/default.qrc
+@@ -21,7 +21,7 @@ SPDX-License-Identifier: GPL-2.0-or-later
+         <file alias="48x48/sd_card.png">icons/48x48/sd_card.png</file>
+         <file alias="48x48/star.png">icons/48x48/star.png</file>
+         <file alias="256x256/plus_folder.png">icons/256x256/plus_folder.png</file>
+-        <file alias="256x256/lichii.png">../../lichii.png</file>
++        <file alias="256x256/nyx2.png">../../nyx2.png</file>
+     </qresource>
+     <qresource prefix="default">
+         <file>style.qss</file>
+diff --git a/src/android/app/src/main/res/values/strings.xml b/src/android/app/src/main/res/values/strings.xml
+index c6fa631..28ac5e0 100644
+--- a/src/android/app/src/main/res/values/strings.xml
++++ b/src/android/app/src/main/res/values/strings.xml
+@@ -946,7 +946,7 @@
+     <string name="loader_error_encrypted_keys_description"><![CDATA[Please ensure your <a href=\"https://yuzu-mirror.github.io/help/quickstart/#dumping-prodkeys-and-titlekeys\">prod.keys</a> file is installed so that games can be decrypted.]]></string>
+     <string name="loader_error_video_core">An error occurred initializing the video core</string>
+     <string name="loader_error_memory">Not enough memory to start the game</string>
+-    <string name="loader_error_memory_description">Lichii could not allocate the game\'s memory. Close other applications to free memory, then try again.</string>
++    <string name="loader_error_memory_description">Nyx2 could not allocate the game\'s memory. Close other applications to free memory, then try again.</string>
+     <string name="loader_error_video_core_description">This is usually caused by an incompatible GPU driver. Installing a custom GPU driver may resolve this problem.</string>
+     <string name="loader_error_file_not_found">ROM file does not exist</string>
+ 
+diff --git a/src/common/core_pinning.cpp b/src/common/core_pinning.cpp
+index 8be5e74..c52b114 100644
+--- a/src/common/core_pinning.cpp
++++ b/src/common/core_pinning.cpp
+@@ -3,11 +3,28 @@
+ 
+ #include <algorithm>
+ #include <charconv>
++#include <cstdlib>
+ 
+ #include "common/core_pinning.h"
+ 
+ namespace Common {
+ 
++std::size_t MinPerformanceCoresForPinning() {
++    static const std::size_t threshold = [] {
++        const char* text = std::getenv("EDEN_NX2_MIN_PIN_CORES");
++        if (text == nullptr) {
++            return MinCoresForGpuThreadPinning;
++        }
++        char* end = nullptr;
++        const unsigned long parsed = std::strtoul(text, &end, 10);
++        if (end == text || parsed == 0) {
++            return MinCoresForGpuThreadPinning;
++        }
++        return static_cast<std::size_t>(parsed);
++    }();
++    return threshold;
++}
++
+ GpuThreadPinning PlanGpuThreadPinning(std::span<const LogicalProcessor> processors) {
+     GpuThreadPinning plan;
+     if (processors.empty()) {
+@@ -24,7 +41,7 @@ GpuThreadPinning PlanGpuThreadPinning(std::span<const LogicalProcessor> processo
+     std::ranges::sort(cores);
+     cores.erase(std::unique(cores.begin(), cores.end()), cores.end());
+     plan.performance_cores = cores.size();
+-    if (cores.size() < MinCoresForGpuThreadPinning) {
++    if (cores.size() < MinPerformanceCoresForPinning()) {
+         return plan;
+     }
+     const u32 front_core = cores[1];
+diff --git a/src/common/core_pinning.h b/src/common/core_pinning.h
+index 5c1f2b5..a47d31c 100644
+--- a/src/common/core_pinning.h
++++ b/src/common/core_pinning.h
+@@ -25,6 +25,11 @@ struct LogicalProcessor {
+ /// Physical cores of the fastest class needed before the GPU threads are pinned.
+ constexpr std::size_t MinCoresForGpuThreadPinning = 6;
+ 
++/// The threshold actually used, which EDEN_NX2_MIN_PIN_CORES overrides (Nyx2). Hosts with fewer
++/// physical cores than MinCoresForGpuThreadPinning, such as a 4-core Haswell, can then try the
++/// pinning without a rebuild; unset or an unparsable value keeps the compiled default.
++[[nodiscard]] std::size_t MinPerformanceCoresForPinning();
++
+ /// Logical processor ids for each pinned role. All three are empty when the host has fewer than
+ /// MinCoresForGpuThreadPinning performance cores.
+ struct GpuThreadPinning {
+diff --git a/src/common/net/net.cpp b/src/common/net/net.cpp
+index 140225d..47a0ab0 100644
+--- a/src/common/net/net.cpp
++++ b/src/common/net/net.cpp
+@@ -60,7 +60,7 @@ std::vector<Asset> Release::GetPlatformAssets(std::string_view platform,
+     for (const std::string_view variant : pgo ? std::vector<std::string_view>{"-pgo", ""}
+                                               : std::vector<std::string_view>{""}) {
+         for (const auto extension : extensions) {
+-            const auto filename = fmt::format("lichii-{}{}{}", platform, variant, extension);
++            const auto filename = fmt::format("Nyx2-{}{}{}", platform, variant, extension);
+             const auto url = host_url + path + filename;
+             if (std::ranges::find(assets, url) == assets.end()) {
+                 continue;
+@@ -223,7 +223,7 @@ RequestResult Fetch(const std::string& url, const std::string& path) {
+         httplib::Request request{
+             .method = "GET",
+             .path = path,
+-            .headers = {{"Accept", "application/vnd.github+json"}, {"User-Agent", "Lichii"}},
++            .headers = {{"Accept", "application/vnd.github+json"}, {"User-Agent", "Nyx2"}},
+         };
+ 
+         client->set_follow_location(true);
+@@ -257,11 +257,17 @@ std::optional<std::string> MakeRequest(const std::string& url, const std::string
+ }
+ 
+ ReleaseList GetReleases() {
++    // Nyx2 v1: sem servidor de atualizacao configurado, nao faz requisicao nenhuma.
++    if (std::string_view{Common::g_build_auto_update_stable_api}.empty() ||
++        std::string_view{Common::g_build_auto_update_api_path}.empty()) {
++        return {};
++    }
++
+     const auto url = fmt::format("https://{}", Common::g_build_auto_update_stable_api);
+     const auto response = Fetch(url, Common::g_build_auto_update_api_path);
+ 
+     if (!response.body) {
+-        LOG_WARNING(Common, "Failed to get Lichii releases");
++        LOG_WARNING(Common, "Failed to get Nyx2 releases");
+         return {.status = response.status};
+     }
+ 
+@@ -272,6 +278,11 @@ ReleaseList GetReleases() {
+ }
+ 
+ std::optional<std::string> GetReleasesBody() {
++    // Nyx2 v1: sem servidor configurado (usado pelas noticias embutidas no boot).
++    if (std::string_view{Common::g_build_auto_update_api_path}.empty()) {
++        return std::nullopt;
++    }
++
+     const auto releases_path = Common::g_build_auto_update_api_path;
+     const auto url = fmt::format("https://{}", Common::g_build_auto_update_stable_api);
+ 
+diff --git a/src/common/settings.h b/src/common/settings.h
+index 5e709f9..ba1dd20 100644
+--- a/src/common/settings.h
++++ b/src/common/settings.h
+@@ -361,7 +361,7 @@ struct Values {
+                                                   true,
+                                                   true};
+ 
+-    // Lichii: caps how often the game's own compositor presents, so the game itself is paced to
++    // Nyx2: caps how often the game's own compositor presents, so the game itself is paced to
+     // this rate instead of only the display. 0 keeps the game's vblank and swap interval.
+     SwitchableSetting<u32, true> fps_limit{linkage,
+                                            0,
+@@ -548,11 +548,7 @@ struct Values {
+                                          linkage, 0, "bg_blue", Category::Renderer, Specialization::Default, true, true};
+ 
+     SwitchableSetting<GpuAccuracy, true> gpu_accuracy{linkage,
+-#ifdef __ANDROID__
+                                                       GpuAccuracy::Low,
+-#else
+-                                                      GpuAccuracy::High,
+-#endif
+                                                       "gpu_accuracy",
+                                                       Category::RendererAdvanced,
+                                                       Specialization::Default,
+diff --git a/src/common/thread.cpp b/src/common/thread.cpp
+index 4cb474b..c004511 100644
+--- a/src/common/thread.cpp
++++ b/src/common/thread.cpp
+@@ -740,7 +740,7 @@ void PinCurrentThread(PinnedRole role) {
+         if (plan.front.empty()) {
+             LOG_WARNING(Common,
+                         "GPU thread pinning skipped: {} physical performance cores, needs {}",
+-                        plan.performance_cores, MinCoresForGpuThreadPinning);
++                        plan.performance_cores, MinPerformanceCoresForPinning());
+             return PinnedCpuSets{};
+         }
+         LOG_INFO(Common,
+@@ -763,7 +763,7 @@ void PinCurrentThread(PinnedRole role) {
+         if (result.front.empty()) {
+             LOG_WARNING(Common,
+                         "GPU thread pinning skipped: {} physical performance cores, needs {}",
+-                        result.performance_cores, MinCoresForGpuThreadPinning);
++                        result.performance_cores, MinPerformanceCoresForPinning());
+         } else {
+             LOG_INFO(Common,
+                      "GPU thread pinning: front and back on a physical core each, guest cores on "
+diff --git a/src/dedicated_room/yuzu_room.rc b/src/dedicated_room/yuzu_room.rc
+index af15a4f..44805ae 100644
+--- a/src/dedicated_room/yuzu_room.rc
++++ b/src/dedicated_room/yuzu_room.rc
+@@ -9,7 +9,7 @@
+ 
+ // Icon with lowest ID value placed first to ensure application icon
+ // remains consistent on all systems.
+-YUZU_ICON              ICON                    "../../dist/lichii.ico"
++YUZU_ICON              ICON                    "../../dist/nyx2.ico"
+ 
+ 
+ /////////////////////////////////////////////////////////////////////////////
+diff --git a/src/frontend_common/update_installer.cpp b/src/frontend_common/update_installer.cpp
+index f20443d..bf90822 100644
+--- a/src/frontend_common/update_installer.cpp
++++ b/src/frontend_common/update_installer.cpp
+@@ -1,4 +1,4 @@
+-// SPDX-FileCopyrightText: Copyright 2026 Lichii Emulator Project
++// SPDX-FileCopyrightText: Copyright 2026 Nyx2 Emulator Project
+ // SPDX-License-Identifier: GPL-3.0-or-later
+ 
+ #include "frontend_common/update_installer.h"
+@@ -136,7 +136,7 @@ bool CanReplace(const fs::path& target) {
+     }
+     const auto probe =
+         target.parent_path() /
+-        (".lichii-update-write-test-" +
++        (".nyx2-update-write-test-" +
+          std::to_string(std::chrono::steady_clock::now().time_since_epoch().count()));
+     if (fs::symlink_status(probe, ec).type() != fs::file_type::not_found) {
+         return false;
+diff --git a/src/frontend_common/update_installer.h b/src/frontend_common/update_installer.h
+index f53cc7b..66e7724 100644
+--- a/src/frontend_common/update_installer.h
++++ b/src/frontend_common/update_installer.h
+@@ -1,4 +1,4 @@
+-// SPDX-FileCopyrightText: Copyright 2026 Lichii Emulator Project
++// SPDX-FileCopyrightText: Copyright 2026 Nyx2 Emulator Project
+ // SPDX-License-Identifier: GPL-3.0-or-later
+ 
+ #pragma once
+diff --git a/src/fuzz/fuzz_common.h b/src/fuzz/fuzz_common.h
+index 07eb676..b4268c6 100644
+--- a/src/fuzz/fuzz_common.h
++++ b/src/fuzz/fuzz_common.h
+@@ -78,7 +78,7 @@ inline void ReadRomFS(const FileSys::VirtualFile& romfs, Budget& budget) {
+ // any real keys, and the harness never reads or writes the user's own keys. Call it before
+ // anything touches Core::Crypto::KeyManager.
+ inline void UseSyntheticKeys() {
+-    const auto dir = std::filesystem::temp_directory_path() / fmt::format("lichii-fuzz-keys-{}", getpid());
++    const auto dir = std::filesystem::temp_directory_path() / fmt::format("Nyx2-fuzz-keys-{}", getpid());
+     std::filesystem::create_directories(dir);
+     std::ofstream keys{dir / "prod.keys"};
+     for (const char* kind : {"application", "ocean", "system"}) {
+diff --git a/src/qt_common/config/shared_translation.cpp b/src/qt_common/config/shared_translation.cpp
+index 78927cd..16672c2 100644
+--- a/src/qt_common/config/shared_translation.cpp
++++ b/src/qt_common/config/shared_translation.cpp
+@@ -155,7 +155,7 @@ std::unique_ptr<TranslationMap> InitializeTranslations(QObject* parent) {
+            tr("Runs a Switch 2 game's own DLSS (its upscaling network, translated for this GPU) "
+               "instead of AMD FSR 3.1 in its place.\nAMD FSR 3.1 still draws while the network is "
+               "checked, when it can't run on this GPU, with resolution scaling, and for the rest "
+-              "of the session if its output fails Lichii's checks.\nTakes effect when a game "
++              "of the session if its output fails Nyx2's checks.\nTakes effect when a game "
+               "starts."));
+     INSERT(Settings, frame_rate_limit, tr("Frame rate limit (Switch 2):"),
+            tr("Rate of the Switch 2 VSync event that games start their frames on (default 60 Hz)."
+@@ -169,7 +169,7 @@ std::unique_ptr<TranslationMap> InitializeTranslations(QObject* parent) {
+     INSERT(Settings, nvidia_dlss, tr("Use NVIDIA DLSS in place of a game's DLSS (experimental)"),
+            tr("Uses NVIDIA DLSS on GeForce RTX cards in place of a Switch 2 game's own DLSS, "
+               "instead of AMD FSR 3.1.\nNeeds NVIDIA's Streamline loader, and NVIDIA DLSS unless "
+-              "the NVIDIA app has downloaded it; Lichii does not ship NVIDIA's files. Use the "
++              "the NVIDIA app has downloaded it; Nyx2 does not ship NVIDIA's files. Use the "
+               "download button below.\nFire Emblem: Fortune's Weave also needs "
+               "EDEN_NX2_DLSS_REPLACEMENT=dlss. Without that override, its spatial workaround "
+               "remains active.\nIn The Legend of Zelda: Ocarina of Time it replaces the game's "
+diff --git a/src/qt_common/discord/discord_impl.cpp b/src/qt_common/discord/discord_impl.cpp
+index 13273f8..db4193e 100644
+--- a/src/qt_common/discord/discord_impl.cpp
++++ b/src/qt_common/discord/discord_impl.cpp
+@@ -69,7 +69,7 @@ std::string DiscordImpl::GetGameString(const std::string& title) {
+     return icon_name;
+ }
+ 
+-static constexpr char DEFAULT_DISCORD_TEXT[] = "Lichii is an emulator for the Nintendo Switch";
++static constexpr char DEFAULT_DISCORD_TEXT[] = "Nyx2 is an emulator for the Nintendo Switch";
+ static constexpr char DEFAULT_DISCORD_IMAGE[] =
+     "https://git.eden-emu.dev/eden-emu/eden/raw/branch/master/dist/qt_themes/default/icons/256x256/"
+     "eden.png";
+diff --git a/src/qt_common/qt_common.cpp b/src/qt_common/qt_common.cpp
+index 28f23f8..6db75bb 100644
+--- a/src/qt_common/qt_common.cpp
++++ b/src/qt_common/qt_common.cpp
+@@ -235,14 +235,14 @@ void Init(QWidget* root) {
+     const auto build_id = std::string(Common::g_build_id);
+ 
+     const auto yuzu_build =
+-        fmt::format("Lichii Development Build | {}-{}", branch_name, description);
++        fmt::format("Nyx2 Development Build | {}-{}", branch_name, description);
+     const auto override_build =
+         fmt::format(fmt::runtime(std::string(Common::g_title_bar_format_idle)), build_id);
+     const auto yuzu_build_version = override_build.empty() ? yuzu_build : override_build;
+     const auto processor_count = std::thread::hardware_concurrency();
+ 
+     // info logging
+-    LOG_INFO(Frontend, "Lichii Version: {}", yuzu_build_version);
++    LOG_INFO(Frontend, "Nyx2 Version: {}", yuzu_build_version);
+     LogRuntimes();
+ #ifdef ARCHITECTURE_x86_64
+     const auto& caps = Common::g_cpu_caps;
+diff --git a/src/tests/common/first_run_config.cpp b/src/tests/common/first_run_config.cpp
+index 69caf70..351e4e5 100644
+--- a/src/tests/common/first_run_config.cpp
++++ b/src/tests/common/first_run_config.cpp
+@@ -54,7 +54,7 @@ public:
+     ConfigDirectory()
+         : original{Common::FS::GetEdenPath(Common::FS::EdenPath::ConfigDir)},
+           path{std::filesystem::temp_directory_path() /
+-               fmt::format("lichii-config-{}", std::random_device{}())} {
++               fmt::format("Nyx2-config-{}", std::random_device{}())} {
+         REQUIRE(std::filesystem::create_directory(path));
+         Common::FS::SetEdenPath(Common::FS::EdenPath::ConfigDir, path);
+         for (const auto& [key, setting] : Settings::values.linkage.by_key) {
+diff --git a/src/tests/common/update_checker.cpp b/src/tests/common/update_checker.cpp
+index 59a7011..ff04c4f 100644
+--- a/src/tests/common/update_checker.cpp
++++ b/src/tests/common/update_checker.cpp
+@@ -1,4 +1,4 @@
+-// SPDX-FileCopyrightText: Copyright 2026 Lichii Emulator Project
++// SPDX-FileCopyrightText: Copyright 2026 Nyx2 Emulator Project
+ // SPDX-License-Identifier: GPL-3.0-or-later
+ 
+ #include <array>
+@@ -14,19 +14,19 @@ namespace {
+ Common::Net::Release MakeRelease(std::string tag, std::string filename) {
+     const nlohmann::json json{
+         {"tag_name", tag},
+-        {"name", "Lichii nx2 " + tag},
++        {"name", "Nyx2 nx2 " + tag},
+         {"prerelease", true},
+         {"assets",
+          {{{"browser_download_url",
+-            "https://github.com/zortos293/Lichii/releases/download/" + tag + "/" + filename}}}},
++            "https://github.com/zortos293/Nyx2/releases/download/" + tag + "/" + filename}}}},
+     };
+-    return Common::Net::Release::FromJson(json, "https://api.github.com", "zortos293/Lichii")
++    return Common::Net::Release::FromJson(json, "https://api.github.com", "zortos293/Nyx2")
+         .value();
+ }
+ 
+ } // namespace
+ 
+-TEST_CASE("Lichii updates compare build numbers, not tag strings", "[updater]") {
++TEST_CASE("Nyx2 updates compare build numbers, not tag strings", "[updater]") {
+     const auto releases = std::array{
+         MakeRelease("build-9", "lichii-windows-x86_64.zip"),
+         MakeRelease("build-100", "lichii-windows-x86_64.zip"),
+@@ -40,7 +40,7 @@ TEST_CASE("Lichii updates compare build numbers, not tag strings", "[updater]")
+     CHECK_FALSE(UpdateChecker::SelectUpdate({}, "build-70", "windows-x86_64"));
+ }
+ 
+-TEST_CASE("Lichii ignores dev builds and malformed release tags", "[updater]") {
++TEST_CASE("Nyx2 ignores dev builds and malformed release tags", "[updater]") {
+     const std::string tag =
+         GENERATE("", "nx2", "v0.2.0", "abc123-nx2", "nx2-build-71", "build-", "build-0", "build--1",
+                  "build-+71", "build-71junk", "build- 71", "build-18446744073709551616");
+@@ -48,12 +48,12 @@ TEST_CASE("Lichii ignores dev builds and malformed release tags", "[updater]") {
+     CHECK_FALSE(UpdateChecker::SelectUpdate(releases, tag, "windows-x86_64"));
+     auto invalid = releases;
+     invalid[0].tag = tag;
+-    invalid[0].assets = {"https://github.com/zortos293/Lichii/releases/download/" + tag +
++    invalid[0].assets = {"https://github.com/zortos293/Nyx2/releases/download/" + tag +
+                          "/lichii-windows-x86_64.zip"};
+     CHECK_FALSE(UpdateChecker::SelectUpdate(invalid, "build-70", "windows-x86_64"));
+ }
+ 
+-TEST_CASE("Lichii selects only the matching platform and PGO variant", "[updater]") {
++TEST_CASE("Nyx2 selects only the matching platform and PGO variant", "[updater]") {
+     const std::string platform =
+         GENERATE("windows-x86_64", "windows-x86_64-pgo", "linux-x86_64", "linux-x86_64-pgo",
+                  "linux-aarch64", "linux-aarch64-pgo", "macos-arm64");
+@@ -64,7 +64,7 @@ TEST_CASE("Lichii selects only the matching platform and PGO variant", "[updater
+           "macos-arm64.zip", "linux-x86_64.AppImage", "linux-x86_64-pgo.AppImage",
+           "linux-aarch64.AppImage", "linux-aarch64-pgo.AppImage"}) {
+         release.assets.push_back(
+-            "https://github.com/zortos293/Lichii/releases/download/build-71/lichii-" +
++            "https://github.com/zortos293/Nyx2/releases/download/build-71/lichii-" +
+             std::string{name});
+     }
+     const auto selected = release.GetPlatformAssets(platform);
+@@ -73,12 +73,12 @@ TEST_CASE("Lichii selects only the matching platform and PGO variant", "[updater
+           "lichii-" + platform + (platform.starts_with("linux-") ? ".AppImage" : ".zip"));
+     CHECK(selected[0].url == "https://github.com");
+     CHECK(selected[0].path ==
+-          "/zortos293/Lichii/releases/download/build-71/" + selected[0].filename);
++          "/zortos293/Nyx2/releases/download/build-71/" + selected[0].filename);
+     CHECK_FALSE(release.GetPlatformAssets("android-arm64").size());
+     CHECK_FALSE(release.GetPlatformAssets("").size());
+ }
+ 
+-TEST_CASE("Lichii skips releases without its asset and falls back to Linux archives", "[updater]") {
++TEST_CASE("Nyx2 skips releases without its asset and falls back to Linux archives", "[updater]") {
+     const auto releases = std::array{
+         MakeRelease("build-73", "lichii-linux-x86_64.AppImage"),
+         MakeRelease("build-71", "lichii-linux-x86_64-pgo.tar.gz"),
+@@ -106,7 +106,7 @@ TEST_CASE("PGO builds fall back to the standard asset, standard builds never get
+     CHECK(pgo[0].filename == "lichii-windows-x86_64.zip");
+ 
+     release.assets.push_back(
+-        "https://github.com/zortos293/Lichii/releases/download/build-71/lichii-windows-x86_64-pgo.zip");
++        "https://github.com/zortos293/Nyx2/releases/download/build-71/lichii-windows-x86_64-pgo.zip");
+     const auto preferred = release.GetPlatformAssets("windows-x86_64-pgo");
+     REQUIRE(preferred.size() == 1);
+     CHECK(preferred[0].name == "PGO");
+@@ -123,7 +123,7 @@ TEST_CASE("PGO builds fall back to the standard asset, standard builds never get
+ TEST_CASE("Linux installs only get the package they were installed from", "[updater]") {
+     auto release = MakeRelease("build-71", "lichii-linux-x86_64.AppImage");
+     release.assets.push_back(
+-        "https://github.com/zortos293/Lichii/releases/download/build-71/lichii-linux-x86_64.tar.gz");
++        "https://github.com/zortos293/Nyx2/releases/download/build-71/lichii-linux-x86_64.tar.gz");
+     CHECK(release.GetPlatformAssets("linux-x86_64", Common::Net::LinuxPackage::AppImage)[0]
+               .filename == "lichii-linux-x86_64.AppImage");
+     CHECK(release.GetPlatformAssets("linux-x86_64", Common::Net::LinuxPackage::Archive)[0]
+@@ -140,22 +140,22 @@ TEST_CASE("Asset digest and size come from the release JSON", "[updater]") {
+         {"tag_name", "build-71"},
+         {"assets",
+          {{{"browser_download_url",
+-            "https://github.com/zortos293/Lichii/releases/download/build-71/"
++            "https://github.com/zortos293/Nyx2/releases/download/build-71/"
+             "lichii-windows-x86_64.zip"},
+            {"size", u64{1234}},
+            {"digest", "sha256:" + sha}},
+           {{"browser_download_url",
+-            "https://github.com/zortos293/Lichii/releases/download/build-71/"
++            "https://github.com/zortos293/Nyx2/releases/download/build-71/"
+             "lichii-linux-x86_64.AppImage"},
+            {"size", u64{5}},
+            {"digest", "sha256:zz"}},
+           {{"browser_download_url",
+-            "https://github.com/zortos293/Lichii/releases/download/build-71/"
++            "https://github.com/zortos293/Nyx2/releases/download/build-71/"
+             "lichii-linux-x86_64.tar.gz"},
+            {"digest", "md5:abc"}}}},
+     };
+     const auto release =
+-        Common::Net::Release::FromJson(json, "https://api.github.com", "zortos293/Lichii").value();
++        Common::Net::Release::FromJson(json, "https://api.github.com", "zortos293/Nyx2").value();
+     const auto windows = release.GetPlatformAssets("windows-x86_64");
+     REQUIRE(windows.size() == 1);
+     CHECK(windows[0].sha256 == std::string(64, 'a'));
+@@ -180,13 +180,13 @@ TEST_CASE("Failed release requests are classified by status", "[updater]") {
+     CHECK(UpdateChecker::ClassifyFailure(200) == UpdateChecker::Failure::Network);
+ }
+ 
+-TEST_CASE("Lichii does not select Eden or lookalike download URLs", "[updater]") {
++TEST_CASE("Nyx2 does not select Eden or lookalike download URLs", "[updater]") {
+     const std::string url = GENERATE(
+         "https://github.com/eden-emu/eden/releases/download/build-71/lichii-windows-x86_64.zip",
+-        "https://github.com/zortos293/Lichii/releases/download/build-70/lichii-windows-x86_64.zip",
+-        "https://github.com/zortos293/Lichii/releases/download/build-71/"
++        "https://github.com/zortos293/Nyx2/releases/download/build-70/lichii-windows-x86_64.zip",
++        "https://github.com/zortos293/Nyx2/releases/download/build-71/"
+         "not-lichii-windows-x86_64.zip",
+-        "https://github.com.example.com/zortos293/Lichii/releases/download/build-71/"
++        "https://github.com.example.com/zortos293/Nyx2/releases/download/build-71/"
+         "lichii-windows-x86_64.zip");
+     auto release = MakeRelease("build-71", "lichii-windows-x86_64.zip");
+     release.assets = {url};
+@@ -198,18 +198,18 @@ TEST_CASE("GitHub failures and invalid JSON produce no releases", "[updater]") {
+         GENERATE("", "not JSON", R"({"message":"API rate limit exceeded"})", "null", "[]",
+                  R"([{"tag_name":42}])", R"([{"tag_name":"build-71","assets":null}])",
+                  R"([{"tag_name":"build-71","draft":true}])");
+-    CHECK(Common::Net::Release::ListFromJson(json, "https://api.github.com", "zortos293/Lichii")
++    CHECK(Common::Net::Release::ListFromJson(json, "https://api.github.com", "zortos293/Nyx2")
+               .empty());
+ }
+ 
+ TEST_CASE("GitHub optional fields can be null or missing", "[updater]") {
+     const std::string_view json = R"([{"tag_name":"build-71","name":null,"body":null}])";
+     const auto releases =
+-        Common::Net::Release::ListFromJson(json, "https://api.github.com", "zortos293/Lichii");
++        Common::Net::Release::ListFromJson(json, "https://api.github.com", "zortos293/Nyx2");
+     REQUIRE(releases.size() == 1);
+     CHECK(releases[0].title == "build-71");
+     CHECK(releases[0].assets.empty());
+-    CHECK(releases[0].html_url == "https://github.com/zortos293/Lichii/releases/tag/build-71");
++    CHECK(releases[0].html_url == "https://github.com/zortos293/Nyx2/releases/tag/build-71");
+ }
+ 
+ TEST_CASE("Release requests handle HTTP failures without throwing", "[updater]") {
+@@ -217,7 +217,7 @@ TEST_CASE("Release requests handle HTTP failures without throwing", "[updater]")
+     httplib::Server server;
+     server.Get("/releases", [status](const httplib::Request& request, httplib::Response& response) {
+         response.status =
+-            request.get_header_value("User-Agent") == "Lichii" &&
++            request.get_header_value("User-Agent") == "Nyx2" &&
+                     request.get_header_value("Accept") == "application/vnd.github+json"
+                 ? status
+                 : 400;
+diff --git a/src/tests/common/update_installer.cpp b/src/tests/common/update_installer.cpp
+index 609b0d1..5383c9b 100644
+--- a/src/tests/common/update_installer.cpp
++++ b/src/tests/common/update_installer.cpp
+@@ -1,4 +1,4 @@
+-// SPDX-FileCopyrightText: Copyright 2026 Lichii Emulator Project
++// SPDX-FileCopyrightText: Copyright 2026 Nyx2 Emulator Project
+ // SPDX-License-Identifier: GPL-3.0-or-later
+ 
+ #include <filesystem>
+@@ -163,11 +163,11 @@ TEST_CASE("Install replaces files, adds new ones and keeps the old ones as a bac
+     TempDir dir;
+     const auto install = dir.path / "app";
+     const auto staging = install / ".update-staging";
+-    Put(install, "lichii.exe", "old exe");
++    Put(install, "Nyx2.exe", "old exe");
+     Put(install, "Qt6Core.dll", "old qt");
+     Put(install, "plugins/a.dll", "old plugin");
+     Put(install, "user/config/qt-config.ini", "my settings");
+-    Put(staging, "lichii.exe", "new exe");
++    Put(staging, "Nyx2.exe", "new exe");
+     Put(staging, "Qt6Core.dll", "new qt");
+     Put(staging, "plugins/b.dll", "new plugin");
+     Put(staging, "user/config/qt-config.ini", "must not be installed");
+@@ -175,73 +175,73 @@ TEST_CASE("Install replaces files, adds new ones and keeps the old ones as a bac
+     std::error_code ec;
+     REQUIRE(UpdateInstaller::Install(staging, install, ec));
+ 
+-    CHECK(Read(install / "lichii.exe") == "new exe");
++    CHECK(Read(install / "Nyx2.exe") == "new exe");
+     CHECK(Read(install / "Qt6Core.dll") == "new qt");
+     CHECK(Read(install / "plugins/b.dll") == "new plugin");
+     CHECK(Read(install / "plugins/a.dll") == "old plugin");
+     CHECK(Read(install / "user/config/qt-config.ini") == "my settings");
+     CHECK_FALSE(fs::exists(staging));
+     const auto backup = install / ".update-backup";
+-    CHECK(Read(backup / "lichii.exe") == "old exe");
++    CHECK(Read(backup / "Nyx2.exe") == "old exe");
+     CHECK(Read(backup / "Qt6Core.dll") == "old qt");
+     CHECK_FALSE(fs::exists(backup / "user"));
+     CHECK(Files(install / "user") == std::set<std::string>{"config/qt-config.ini"});
+     CHECK(Read(install / "install-manifest.txt") ==
+-          "Qt6Core.dll\nlichii.exe\nplugins/b.dll\n");
++          "Qt6Core.dll\nNyx2.exe\nplugins/b.dll\n");
+     CHECK_FALSE(fs::exists(install / ".update-backup.tmp"));
+ }
+ 
+ TEST_CASE("A later update removes the files the new version dropped", "[updater]") {
+     TempDir dir;
+     const auto install = dir.path / "app";
+-    Put(install, "lichii.exe", "v1");
++    Put(install, "Nyx2.exe", "v1");
+     Put(install, "old.dll", "v1 only");
+     Put(install, "keep.dll", "v1");
+     Put(install, "user/data.bin", "mine");
+     std::error_code ec;
+ 
+-    Put(install, ".update-staging/lichii.exe", "v2");
++    Put(install, ".update-staging/Nyx2.exe", "v2");
+     Put(install, ".update-staging/old.dll", "v2");
+     Put(install, ".update-staging/keep.dll", "v2");
+     REQUIRE(UpdateInstaller::Install(install / ".update-staging", install, ec));
+ 
+-    Put(install, ".update-staging/lichii.exe", "v3");
++    Put(install, ".update-staging/Nyx2.exe", "v3");
+     Put(install, ".update-staging/keep.dll", "v3");
+     REQUIRE(UpdateInstaller::Install(install / ".update-staging", install, ec));
+ 
+     CHECK(Files(install) ==
+-          std::set<std::string>{"lichii.exe", "keep.dll", "install-manifest.txt",
+-                                ".update-backup/lichii.exe", ".update-backup/keep.dll",
++          std::set<std::string>{"Nyx2.exe", "keep.dll", "install-manifest.txt",
++                                ".update-backup/Nyx2.exe", ".update-backup/keep.dll",
+                                 ".update-backup/old.dll", ".update-backup/install-manifest.txt",
+                                 "user/data.bin"});
+-    CHECK(Read(install / "lichii.exe") == "v3");
++    CHECK(Read(install / "Nyx2.exe") == "v3");
+     CHECK(Read(install / ".update-backup/old.dll") == "v2");
+-    CHECK(Read(install / ".update-backup/lichii.exe") == "v2");
++    CHECK(Read(install / ".update-backup/Nyx2.exe") == "v2");
+ }
+ 
+ TEST_CASE("Restoring the backup brings back the previous version and can be undone", "[updater]") {
+     TempDir dir;
+     const auto install = dir.path / "app";
+-    Put(install, "lichii.exe", "v1");
++    Put(install, "Nyx2.exe", "v1");
+     Put(install, "gone.dll", "v1 only");
+     Put(install, "user/data.bin", "mine");
+     std::error_code ec;
+ 
+-    Put(install, ".update-staging/lichii.exe", "v2");
++    Put(install, ".update-staging/Nyx2.exe", "v2");
+     Put(install, ".update-staging/new.dll", "v2 only");
+     REQUIRE(UpdateInstaller::Install(install / ".update-staging", install, ec));
+     REQUIRE(fs::exists(install / "new.dll"));
+ 
+     REQUIRE(UpdateInstaller::Install(install / ".update-backup", install, ec));
+-    CHECK(Read(install / "lichii.exe") == "v1");
++    CHECK(Read(install / "Nyx2.exe") == "v1");
+     CHECK(Read(install / "gone.dll") == "v1 only");
+     CHECK_FALSE(fs::exists(install / "new.dll"));
+     CHECK(Read(install / "user/data.bin") == "mine");
+-    CHECK(Read(install / ".update-backup/lichii.exe") == "v2");
++    CHECK(Read(install / ".update-backup/Nyx2.exe") == "v2");
+     CHECK(Read(install / ".update-backup/new.dll") == "v2 only");
+ 
+     REQUIRE(UpdateInstaller::Install(install / ".update-backup", install, ec));
+-    CHECK(Read(install / "lichii.exe") == "v2");
++    CHECK(Read(install / "Nyx2.exe") == "v2");
+     CHECK(Read(install / "new.dll") == "v2 only");
+     CHECK_FALSE(fs::exists(install / "gone.dll"));
+     CHECK(Read(install / "user/data.bin") == "mine");
+@@ -298,18 +298,18 @@ TEST_CASE("The user folder is protected whatever its letter case", "[updater]")
+     TempDir dir;
+     const auto install = dir.path / "app";
+     const auto staging = install / ".update-staging";
+-    Put(install, "lichii.exe", "old exe");
++    Put(install, "Nyx2.exe", "old exe");
+     Put(install, "USER/data.bin", "mine");
+-    Put(staging, "lichii.exe", "new exe");
++    Put(staging, "Nyx2.exe", "new exe");
+     Put(staging, "User/config.ini", "must not be installed");
+ 
+     std::error_code ec;
+     REQUIRE(UpdateInstaller::Install(staging, install, ec));
+     CHECK(Read(install / "USER/data.bin") == "mine");
+     CHECK_FALSE(fs::exists(install / "User/config.ini"));
+-    CHECK(Read(install / "install-manifest.txt") == "lichii.exe\n");
++    CHECK(Read(install / "install-manifest.txt") == "Nyx2.exe\n");
+     CHECK(Files(install / ".update-backup") ==
+-          std::set<std::string>{"lichii.exe", "install-manifest.txt"});
++          std::set<std::string>{"Nyx2.exe", "install-manifest.txt"});
+ }
+ 
+ TEST_CASE("Path list entries inside a folder are removed", "[updater]") {
+diff --git a/src/tests/qt_compatibility/compatibility_report.cpp b/src/tests/qt_compatibility/compatibility_report.cpp
+index 8c7fafe..32c7cba 100644
+--- a/src/tests/qt_compatibility/compatibility_report.cpp
++++ b/src/tests/qt_compatibility/compatibility_report.cpp
+@@ -126,7 +126,7 @@ private slots:
+ Session DialogTest::Seed() {
+     return {.program_id = 0x0400000000000000ULL,
+             .title = QStringLiteral("Synthetic Switch 2 game"),
+-            .build = QStringLiteral("Lichii prototype (synthetic)"),
++            .build = QStringLiteral("Nyx2 prototype (synthetic)"),
+             .game_version = QStringLiteral("1.0.0"),
+             .cpu = QStringLiteral("Example CPU"),
+             .gpu = {},
+@@ -211,7 +211,7 @@ void DialogTest::explicitCatalogAndPaging() {
+     QCOMPARE(request.url().path(), QStringLiteral("/api/games"));
+     QCOMPARE(QUrlQuery(request.url()).queryItemValue(QStringLiteral("sort")),
+              QStringLiteral("title"));
+-    QVERIFY(!request.hasRawHeader("X-Lichii-Client"));
++    QVERIFY(!request.hasRawHeader("X-Nyx2-Client"));
+     network.requests.last().reply->Complete(200, Catalog(1, 2));
+     QCOMPARE(dialog.confirmed_game, 0);
+     dialog.confirm->click();
+@@ -254,7 +254,7 @@ void DialogTest::consentAndDoubleSubmit() {
+     QCOMPARE(sent.operation, QNetworkAccessManager::PostOperation);
+     QCOMPARE(sent.request.url().toString(),
+              QStringLiteral("https://lichii.zortos.me/api/v1/desktop/reports"));
+-    QCOMPARE(sent.request.rawHeader("X-Lichii-Client"), QByteArray("desktop/1"));
++    QCOMPARE(sent.request.rawHeader("X-Nyx2-Client"), QByteArray("desktop/1"));
+     QVERIFY(!QUuid(QString::fromUtf8(sent.request.rawHeader("Idempotency-Key"))).isNull());
+     for (const auto& header : {"Cookie", "Authorization", "Origin", "Sec-Fetch-Site"}) {
+         QVERIFY(!sent.request.hasRawHeader(header));
+diff --git a/src/updater/CMakeLists.txt b/src/updater/CMakeLists.txt
+index 7e5ce97..742596f 100644
+--- a/src/updater/CMakeLists.txt
++++ b/src/updater/CMakeLists.txt
+@@ -1,16 +1,16 @@
+-# SPDX-FileCopyrightText: Copyright 2026 Lichii Emulator Project
++# SPDX-FileCopyrightText: Copyright 2026 Nyx2 Emulator Project
+ # SPDX-License-Identifier: GPL-3.0-or-later
+ 
+-add_executable(lichii-updater main.cpp ../frontend_common/update_installer.cpp)
+-target_include_directories(lichii-updater PRIVATE ${PROJECT_SOURCE_DIR}/src)
+-target_compile_features(lichii-updater PRIVATE cxx_std_20)
+-target_link_libraries(lichii-updater PRIVATE user32 shell32)
+-set_target_properties(lichii-updater PROPERTIES WIN32_EXECUTABLE ON)
++add_executable(Nyx2-updater main.cpp ../frontend_common/update_installer.cpp)
++target_include_directories(Nyx2-updater PRIVATE ${PROJECT_SOURCE_DIR}/src)
++target_compile_features(Nyx2-updater PRIVATE cxx_std_20)
++target_link_libraries(Nyx2-updater PRIVATE user32 shell32)
++set_target_properties(Nyx2-updater PROPERTIES WIN32_EXECUTABLE ON)
+ 
+-# The helper runs from a temporary folder, away from the DLLs next to lichii.exe.
++# The helper runs from a temporary folder, away from the DLLs next to Nyx2.exe.
+ if (MSVC)
+-    set_property(TARGET lichii-updater PROPERTY MSVC_RUNTIME_LIBRARY
++    set_property(TARGET Nyx2-updater PROPERTY MSVC_RUNTIME_LIBRARY
+                  "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+ else()
+-    target_link_options(lichii-updater PRIVATE -static)
++    target_link_options(Nyx2-updater PRIVATE -static)
+ endif()
+diff --git a/src/updater/main.cpp b/src/updater/main.cpp
+index ea8aa82..bcb85b0 100644
+--- a/src/updater/main.cpp
++++ b/src/updater/main.cpp
+@@ -1,10 +1,10 @@
+-// SPDX-FileCopyrightText: Copyright 2026 Lichii Emulator Project
++// SPDX-FileCopyrightText: Copyright 2026 Nyx2 Emulator Project
+ // SPDX-License-Identifier: GPL-3.0-or-later
+ 
+-// Installs a staged update for Windows. Lichii copies this program to a temporary folder and starts
+-// it before closing, because the running lichii.exe and its DLLs cannot be replaced.
++// Installs a staged update for Windows. Nyx2 copies this program to a temporary folder and starts
++// it before closing, because the running Nyx2.exe and its DLLs cannot be replaced.
+ //
+-// lichii-updater.exe <process id> <staging folder> <install folder> <program to start>
++// Nyx2-updater.exe <process id> <staging folder> <install folder> <program to start>
+ 
+ #include <cstdlib>
+ #include <cwchar>
+@@ -45,15 +45,15 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
+         const DWORD wait = WaitForSingleObject(process, 120000);
+         CloseHandle(process);
+         if (wait != WAIT_OBJECT_0) {
+-            Log(install_dir, "Lichii did not close in time, the update was not installed");
++            Log(install_dir, "Nyx2 did not close in time, the update was not installed");
+             if (staging.filename() == ".update-staging") {
+                 std::error_code ignored;
+                 fs::remove_all(staging, ignored);
+             }
+             MessageBoxW(nullptr,
+-                        L"Lichii did not close in time, so the update was not installed. Your "
++                        L"Nyx2 did not close in time, so the update was not installed. Your "
+                         L"installation was not changed. Try the update again.",
+-                        L"Lichii update", MB_OK | MB_ICONINFORMATION);
++                        L"Nyx2 update", MB_OK | MB_ICONINFORMATION);
+             return 1;
+         }
+     }
+@@ -65,9 +65,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
+     } else {
+         Log(install_dir, "Install failed, the previous files were put back: " + ec.message());
+         MessageBoxW(nullptr,
+-                    L"Lichii could not install the update. Your previous version was put back and "
+-                    L"will start now. See .update-helper.log in the Lichii folder for details.",
+-                    L"Lichii update", MB_OK | MB_ICONERROR);
++                    L"Nyx2 could not install the update. Your previous version was put back and "
++                    L"will start now. See .update-helper.log in the Nyx2 folder for details.",
++                    L"Nyx2 update", MB_OK | MB_ICONERROR);
+     }
+ 
+     std::wstring command = L"\"" + program.wstring() + L"\"";
+diff --git a/src/video_core/shader_cache_v2/cache.h b/src/video_core/shader_cache_v2/cache.h
+index 1a6062d..9590bcc 100644
+--- a/src/video_core/shader_cache_v2/cache.h
++++ b/src/video_core/shader_cache_v2/cache.h
+@@ -25,9 +25,9 @@ namespace VideoCommon::ShaderCacheV2 {
+ struct LogRecord;
+ 
+ /// The log of a title, in its shader cache directory
+-inline constexpr std::string_view FileName{"lichii-cache.v2.bin"};
++inline constexpr std::string_view FileName{"nyx2-cache.v2.bin"};
+ /// What the driver compiled for that title's pipelines, beside it (driver_blobs.h)
+-inline constexpr std::string_view DriverFileName{"lichii-cache.v2.driver.bin"};
++inline constexpr std::string_view DriverFileName{"nyx2-cache.v2.driver.bin"};
+ 
+ /// What the log held for a program the shader cache captured
+ enum class ProgramLookup : u8 {
+diff --git a/src/yuzu/CMakeLists.txt b/src/yuzu/CMakeLists.txt
+index 3599e2c..4be9dc8 100644
+--- a/src/yuzu/CMakeLists.txt
++++ b/src/yuzu/CMakeLists.txt
+@@ -254,7 +254,7 @@ add_executable(yuzu
+     game/carousel.h game/carousel.cpp
+ )
+ 
+-set_target_properties(yuzu PROPERTIES OUTPUT_NAME "lichii")
++set_target_properties(yuzu PROPERTIES OUTPUT_NAME "Nyx2")
+ 
+ # Shipped next to the executable: the NX2 switches a GUI launch cannot set another way. Read at
+ # startup (LoadNx2Switches in main.cpp); a user copy in %APPDATA%\eden overrides it.
+@@ -382,12 +382,12 @@ target_sources(yuzu
+ if (APPLE)
+     target_sources(yuzu PRIVATE util/macos_sleep.cpp util/macos_sleep.h)
+ 
+-    # Use the supplied Lichii artwork for all macOS generators.
++    # Use the supplied Nyx2 artwork for all macOS generators.
+     set(_dist "${CMAKE_SOURCE_DIR}/dist")
+-    set(_icons "${_dist}/lichii.icns")
++    set(_icons "${_dist}/nyx2.icns")
+     if (CMAKE_GENERATOR MATCHES "Xcode")
+         set_target_properties(yuzu PROPERTIES
+-            MACOSX_BUNDLE_ICON_FILE lichii.icns
++            MACOSX_BUNDLE_ICON_FILE nyx2.icns
+             # Also force xcode to manage signing for us.
+             XCODE_ATTRIBUTE_CODE_SIGNING_REQUIRED ON
+             XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED ON)
+diff --git a/src/yuzu/about_dialog.cpp b/src/yuzu/about_dialog.cpp
+index c1c571c..16f139b 100644
+--- a/src/yuzu/about_dialog.cpp
++++ b/src/yuzu/about_dialog.cpp
+@@ -23,8 +23,8 @@ AboutDialog::AboutDialog(QWidget* parent)
+ 
+     ui->setupUi(this);
+     // Try and request the icon from Qt theme (Linux?)
+-    const QIcon yuzu_logo = QIcon::fromTheme(QStringLiteral("io.github.zortos293.lichii"),
+-                                           QIcon(QStringLiteral(":/img/lichii.ico")));
++    const QIcon yuzu_logo = QIcon::fromTheme(QStringLiteral("io.github.zortos293.nyx2"),
++                                           QIcon(QStringLiteral(":/img/nyx2.ico")));
+     if (!yuzu_logo.isNull()) {
+         ui->labelLogo->setPixmap(yuzu_logo.pixmap(200));
+     }
+diff --git a/src/yuzu/aboutdialog.ui b/src/yuzu/aboutdialog.ui
+index 70c2f81..96bbf02 100644
+--- a/src/yuzu/aboutdialog.ui
++++ b/src/yuzu/aboutdialog.ui
+@@ -11,7 +11,7 @@
+    </rect>
+   </property>
+   <property name="windowTitle">
+-    <string>About Lichii</string>
++    <string>About Nyx2</string>
+   </property>
+   <layout class="QVBoxLayout" name="verticalLayout_3">
+    <item>
+@@ -36,7 +36,7 @@
+           <string/>
+          </property>
+          <property name="pixmap">
+-          <pixmap resource="../../dist/qt_themes/default/default.qrc">:/icons/default/256x256/lichii.png</pixmap>
++          <pixmap resource="../../dist/qt_themes/default/default.qrc">:/icons/default/256x256/nyx2.png</pixmap>
+          </property>
+          <property name="scaledContents">
+           <bool>true</bool>
+@@ -69,7 +69,7 @@
+           </sizepolicy>
+          </property>
+          <property name="text">
+-          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:28pt;&quot;&gt;Lichii&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
++          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:28pt;&quot;&gt;Nyx2&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          </property>
+         </widget>
+        </item>
+@@ -102,7 +102,7 @@ hr { height: 1px; border-width: 0; }
+ li.unchecked::marker { content: &quot;\2610&quot;; }
+ li.checked::marker { content: &quot;\2612&quot;; }
+ &lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'Noto Sans'; font-size:9pt; font-weight:400; font-style:normal;&quot;&gt;
+-&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-family:'MS Shell Dlg 2'; font-size:12pt;&quot;&gt;Lichii is an experimental open-source emulator for the Nintendo Switch 2, based on Eglantine and Eden. &lt;br /&gt;&lt;br /&gt;This software should not be used to play games you have not legally obtained.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
++&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-family:'MS Shell Dlg 2'; font-size:12pt;&quot;&gt;Nyx2 is an experimental open-source emulator for the Nintendo Switch 2, based on Eglantine and Eden. &lt;br /&gt;&lt;br /&gt;This software should not be used to play games you have not legally obtained.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignmentFlag::AlignLeading|Qt::AlignmentFlag::AlignLeft|Qt::AlignmentFlag::AlignVCenter</set>
+@@ -144,7 +144,7 @@ li.checked::marker { content: &quot;\2612&quot;; }
+           </sizepolicy>
+          </property>
+          <property name="text">
+-          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:7pt;&quot;&gt;&amp;quot;Nintendo Switch&amp;quot; is a trademark of Nintendo. Lichii is not affiliated with Nintendo in any way.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
++          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:7pt;&quot;&gt;&amp;quot;Nintendo Switch&amp;quot; is a trademark of Nintendo. Nyx2 is not affiliated with Nintendo in any way.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          </property>
+         </widget>
+        </item>
+diff --git a/src/yuzu/bootmanager.cpp b/src/yuzu/bootmanager.cpp
+index b5eeea0..dc3a2bb 100644
+--- a/src/yuzu/bootmanager.cpp
++++ b/src/yuzu/bootmanager.cpp
+@@ -118,7 +118,7 @@ struct NullRenderWidget : public RenderWidget {
+ GRenderWindow::GRenderWindow(MainWindow* parent,
+                              std::shared_ptr<InputCommon::InputSubsystem> input_subsystem_)
+     : QWidget(parent), input_subsystem{std::move(input_subsystem_)} {
+-    setWindowTitle(QStringLiteral("Lichii %1 | %2-%3")
++    setWindowTitle(QStringLiteral("%1 | %2-%3")
+                        .arg(QString::fromUtf8(Common::g_build_name),
+                             QString::fromUtf8(Common::g_scm_branch),
+                             QString::fromUtf8(Common::g_scm_desc)));
+@@ -863,7 +863,7 @@ bool GRenderWindow::InitializeOpenGL() {
+     return true;
+ #else
+     QMessageBox::warning(this, tr("OpenGL not available!"),
+-                         tr("Lichii has not been compiled with OpenGL support."));
++                         tr("Nyx2 has not been compiled with OpenGL support."));
+     return false;
+ #endif
+ }
+diff --git a/src/yuzu/compatibility_report.cpp b/src/yuzu/compatibility_report.cpp
+index db61233..2e1cc71 100644
+--- a/src/yuzu/compatibility_report.cpp
++++ b/src/yuzu/compatibility_report.cpp
+@@ -29,7 +29,9 @@
+ 
+ namespace CompatibilityReporting {
+ namespace {
+-constexpr auto Site = "https://lichii.zortos.me";
++// Nyx2 v1: o envio de relatorios de compatibilidade foi desativado junto com o
++// servidor do fork original. O host abaixo e reservado (.invalid) e nunca resolve.
++constexpr auto Site = "https://nyx2.invalid";
+ constexpr qsizetype ReplyLimit = 256 * 1024;
+ const QMap<QString, int> Limits{
+     {QStringLiteral("name"), 60},      {QStringLiteral("handle"), 16},
+@@ -114,8 +116,8 @@ Dialog::Dialog(const Session& session, QNetworkAccessManager* network_, QWidget*
+     search_row->addWidget(query, 1);
+     search_row->addWidget(search);
+     layout->addLayout(search_row);
+-    auto* search_notice = new QLabel(tr("Search sends only the text above to lichii.zortos.me. "
+-                                        "The service sees your IP address."),
++    auto* search_notice = new QLabel(tr("Search needs an online catalog: it sends only the text "
++                                        "above to the catalog server, which sees your IP address."),
+                                      this);
+     search_notice->setWordWrap(true);
+     layout->addWidget(search_notice);
+@@ -187,7 +189,7 @@ Dialog::Dialog(const Session& session, QNetworkAccessManager* network_, QWidget*
+                       "not collected. Do not paste logs, paths, keys or private details."));
+     setup_notice->setWordWrap(true);
+     setup->addRow(setup_notice);
+-    line(setup, QStringLiteral("build"), tr("Lichii build"), Known(session.build));
++    line(setup, QStringLiteral("build"), tr("Nyx2 build"), Known(session.build));
+     line(setup, QStringLiteral("gameVersion"), tr("Game version"), Known(session.game_version));
+     line(setup, QStringLiteral("cpu"), tr("CPU"), Known(session.cpu));
+     line(setup, QStringLiteral("gpu"), tr("GPU"), Known(session.gpu));
+@@ -489,7 +491,7 @@ void Dialog::Request(bool submission, const QByteArray& payload) {
+     request.setRawHeader("Accept", "application/json");
+     if (submission) {
+         request.setHeader(QNetworkRequest::ContentTypeHeader, QStringLiteral("application/json"));
+-        request.setRawHeader("X-Lichii-Client", "desktop/1");
++        request.setRawHeader("X-Nyx2-Client", "desktop/1");
+         request.setRawHeader("Idempotency-Key", submission_key);
+     }
+     auto* pending = submission ? network->post(request, payload) : network->get(request);
+@@ -578,7 +580,7 @@ void Dialog::Finished(bool submission, int http_status, const QByteArray& body,
+             const auto uuid = QUuid(id);
+             valid = valid && !uuid.isNull() && uuid.toString(QUuid::WithoutBraces) == id &&
+                     url.isValid() && url.scheme() == QStringLiteral("https") &&
+-                    url.host() == QStringLiteral("lichii.zortos.me") && url.port(-1) == -1 &&
++                    url.host() == QStringLiteral("nyx2.invalid") && url.port(-1) == -1 &&
+                     url.userInfo().isEmpty() && !url.hasQuery() && !url.hasFragment() &&
+                     url.path() == QStringLiteral("/reports/") + id;
+             if (valid) {
+diff --git a/src/yuzu/configuration/configure.ui b/src/yuzu/configuration/configure.ui
+index 5e7f954..12a8455 100644
+--- a/src/yuzu/configuration/configure.ui
++++ b/src/yuzu/configuration/configure.ui
+@@ -17,7 +17,7 @@
+    </size>
+   </property>
+   <property name="windowTitle">
+-    <string>Lichii Configuration</string>
++    <string>Nyx2 Configuration</string>
+   </property>
+   <layout class="QVBoxLayout" name="verticalLayout">
+    <item>
+diff --git a/src/yuzu/configuration/configure_debug.ui b/src/yuzu/configuration/configure_debug.ui
+index 1815d93..41912f3 100644
+--- a/src/yuzu/configuration/configure_debug.ui
++++ b/src/yuzu/configuration/configure_debug.ui
+@@ -784,7 +784,7 @@
+        </font>
+       </property>
+       <property name="text">
+-    <string>**This will be reset automatically when Lichii closes.</string>
++    <string>**This will be reset automatically when Nyx2 closes.</string>
+       </property>
+       <property name="indent">
+        <number>20</number>
+diff --git a/src/yuzu/configuration/configure_general.cpp b/src/yuzu/configuration/configure_general.cpp
+index 76f0965..5414833 100644
+--- a/src/yuzu/configuration/configure_general.cpp
++++ b/src/yuzu/configuration/configure_general.cpp
+@@ -98,7 +98,7 @@ void ConfigureGeneral::SetResetCallback(std::function<void()> callback) {
+ 
+ void ConfigureGeneral::ResetDefaults() {
+     QMessageBox::StandardButton answer = QMessageBox::question(
+-        this, tr("Lichii"),
++        this, tr("Nyx2"),
+         tr("This reset all settings and remove all per-game configurations. This will not delete "
+            "game directories, profiles, or input profiles. Proceed?"),
+         QMessageBox::Yes | QMessageBox::No, QMessageBox::No);
+diff --git a/src/yuzu/configuration/configure_hotkeys.cpp b/src/yuzu/configuration/configure_hotkeys.cpp
+index c615036..962b635 100644
+--- a/src/yuzu/configuration/configure_hotkeys.cpp
++++ b/src/yuzu/configuration/configure_hotkeys.cpp
+@@ -26,7 +26,7 @@ constexpr int controller_column = 2;
+ static QString HotkeyDisplayName(const QString& action) {
+     // Keep the stored shortcut key compatible with existing configurations.
+     if (action == QStringLiteral("Exit Eglantine")) {
+-        return QCoreApplication::translate("Hotkeys", "Exit Lichii");
++        return QCoreApplication::translate("Hotkeys", "Exit Nyx2");
+     }
+     return QCoreApplication::translate("Hotkeys", qPrintable(action));
+ }
+diff --git a/src/yuzu/configuration/configure_input_advanced.ui b/src/yuzu/configuration/configure_input_advanced.ui
+index 622c73a..9b71d9a 100644
+--- a/src/yuzu/configuration/configure_input_advanced.ui
++++ b/src/yuzu/configuration/configure_input_advanced.ui
+@@ -2656,7 +2656,7 @@
+                    <item row="2" column="0">
+                      <widget class="QCheckBox" name="enable_raw_input">
+                        <property name="toolTip">
+-                         <string>Requires restarting Lichii</string>
++                         <string>Requires restarting Nyx2</string>
+                        </property>
+                        <property name="minimumSize">
+                          <size>
+@@ -2698,7 +2698,7 @@
+                    <item row="5" column="0">
+                       <widget class="QCheckBox" name="enable_joycon_driver">
+                        <property name="toolTip">
+-                         <string>Requires restarting Lichii</string>
++                         <string>Requires restarting Nyx2</string>
+                        </property>
+                        <property name="minimumSize">
+                          <size>
+@@ -2714,7 +2714,7 @@
+                    <item row="6" column="0">
+                       <widget class="QCheckBox" name="enable_procon_driver">
+                        <property name="toolTip">
+-                         <string>Requires restarting Lichii</string>
++                         <string>Requires restarting Nyx2</string>
+                        </property>
+                        <property name="minimumSize">
+                          <size>
+diff --git a/src/yuzu/configuration/configure_motion_touch.cpp b/src/yuzu/configuration/configure_motion_touch.cpp
+index e3689bf..8b4c856 100644
+--- a/src/yuzu/configuration/configure_motion_touch.cpp
++++ b/src/yuzu/configuration/configure_motion_touch.cpp
+@@ -163,27 +163,27 @@ void ConfigureMotionTouch::OnUDPAddServer() {
+     const int row = udp_server_list_model->rowCount();
+ 
+     if (!ok) {
+-        QMessageBox::warning(this, tr("Lichii"), tr("Port number has invalid characters"));
++        QMessageBox::warning(this, tr("Nyx2"), tr("Port number has invalid characters"));
+         return;
+     }
+     if (port_number < 0 || port_number > 65353) {
+-        QMessageBox::warning(this, tr("Lichii"), tr("Port has to be in range 0 and 65353"));
++        QMessageBox::warning(this, tr("Nyx2"), tr("Port has to be in range 0 and 65353"));
+         return;
+     }
+     if (!re.match(server_text).hasMatch()) {
+-        QMessageBox::warning(this, tr("Lichii"), tr("IP address is not valid"));
++        QMessageBox::warning(this, tr("Nyx2"), tr("IP address is not valid"));
+         return;
+     }
+     // Search for duplicates
+     for (const auto& item : udp_server_list_model->stringList()) {
+         if (item == server_string) {
+-            QMessageBox::warning(this, tr("Lichii"), tr("This UDP server already exists"));
++            QMessageBox::warning(this, tr("Nyx2"), tr("This UDP server already exists"));
+             return;
+         }
+     }
+     // Limit server count to 8
+     if (row == 8) {
+-        QMessageBox::warning(this, tr("Lichii"), tr("Unable to add more than 8 servers"));
++        QMessageBox::warning(this, tr("Nyx2"), tr("Unable to add more than 8 servers"));
+         return;
+     }
+ 
+@@ -277,7 +277,7 @@ void ConfigureMotionTouch::OnConfigureTouchFromButton() {
+ 
+ bool ConfigureMotionTouch::CanCloseDialog() {
+     if (udp_test_in_progress) {
+-        QMessageBox::warning(this, tr("Lichii"),
++        QMessageBox::warning(this, tr("Nyx2"),
+                              tr("UDP Test or calibration configuration is in progress.<br>Please "
+                                 "wait for them to finish."));
+         return false;
+diff --git a/src/yuzu/configuration/configure_touchscreen_advanced.ui b/src/yuzu/configuration/configure_touchscreen_advanced.ui
+index 662cc1a..1ba0916 100644
+--- a/src/yuzu/configuration/configure_touchscreen_advanced.ui
++++ b/src/yuzu/configuration/configure_touchscreen_advanced.ui
+@@ -23,7 +23,7 @@
+       </size>
+      </property>
+      <property name="text">
+-      <string>Warning: The settings in this page affect the inner workings of Lichii's emulated touchscreen. Changing them may result in undesirable behavior, such as the touchscreen partially or not working. You should only use this page if you know what you are doing.</string>
++      <string>Warning: The settings in this page affect the inner workings of Nyx2's emulated touchscreen. Changing them may result in undesirable behavior, such as the touchscreen partially or not working. You should only use this page if you know what you are doing.</string>
+      </property>
+      <property name="wordWrap">
+       <bool>true</bool>
+diff --git a/src/yuzu/configuration/configure_web.ui b/src/yuzu/configuration/configure_web.ui
+index 34900e3..d4e1cb4 100644
+--- a/src/yuzu/configuration/configure_web.ui
++++ b/src/yuzu/configuration/configure_web.ui
+@@ -22,7 +22,7 @@
+      <item>
+       <widget class="QGroupBox" name="groupBoxWebConfig">
+        <property name="title">
+-        <string>Lichii Web Service</string>
++        <string>Nyx2 Web Service</string>
+        </property>
+        <layout class="QVBoxLayout" name="verticalLayoutYuzuWebService">
+         <item>
+diff --git a/src/yuzu/configuration/nvidia_dlss_panel.cpp b/src/yuzu/configuration/nvidia_dlss_panel.cpp
+index fac8132..f149846 100644
+--- a/src/yuzu/configuration/nvidia_dlss_panel.cpp
++++ b/src/yuzu/configuration/nvidia_dlss_panel.cpp
+@@ -459,7 +459,7 @@ void NvidiaDlssPanel::Download() {
+     dialog.setWindowTitle(Tr("Download NVIDIA DLSS"));
+     QVBoxLayout* layout = new QVBoxLayout(&dialog);
+     QLabel* intro = new QLabel(
+-        Tr("Lichii will download %1 from NVIDIA's Streamline %2 release on GitHub into %3.<br>"
++        Tr("Nyx2 will download %1 from NVIDIA's Streamline %2 release on GitHub into %3.<br>"
+            "These files are NVIDIA's, under NVIDIA's licence terms below.")
+             .arg(names.join(QStringLiteral(" and ")), QString::fromLatin1(RELEASE_VERSION),
+                  PathText(folder)),
+diff --git a/src/yuzu/configuration/system/new_user_dialog.ui b/src/yuzu/configuration/system/new_user_dialog.ui
+index e864ba4..8ec3ad7 100644
+--- a/src/yuzu/configuration/system/new_user_dialog.ui
++++ b/src/yuzu/configuration/system/new_user_dialog.ui
+@@ -57,7 +57,7 @@
+      <item row="0" column="1" colspan="2">
+       <widget class="QLineEdit" name="username">
+        <property name="text">
+-        <string>Lichii</string>
++        <string>Nyx2</string>
+        </property>
+       </widget>
+      </item>
+diff --git a/src/yuzu/deps_dialog.ui b/src/yuzu/deps_dialog.ui
+index 15764e6..8fa5503 100644
+--- a/src/yuzu/deps_dialog.ui
++++ b/src/yuzu/deps_dialog.ui
+@@ -11,7 +11,7 @@
+    </rect>
+   </property>
+   <property name="windowTitle">
+-    <string>Lichii Dependencies</string>
++    <string>Nyx2 Dependencies</string>
+   </property>
+   <layout class="QVBoxLayout" name="verticalLayout_3">
+    <item>
+@@ -36,7 +36,7 @@
+           <string/>
+          </property>
+          <property name="pixmap">
+-          <pixmap resource="../../dist/qt_themes/default/default.qrc">:/icons/default/256x256/lichii.png</pixmap>
++          <pixmap resource="../../dist/qt_themes/default/default.qrc">:/icons/default/256x256/nyx2.png</pixmap>
+          </property>
+          <property name="scaledContents">
+           <bool>true</bool>
+@@ -69,7 +69,7 @@
+           </sizepolicy>
+          </property>
+          <property name="text">
+-          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:28pt;&quot;&gt;Lichii Dependencies&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
++          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:28pt;&quot;&gt;Nyx2 Dependencies&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          </property>
+         </widget>
+        </item>
+@@ -82,7 +82,7 @@
+           </sizepolicy>
+          </property>
+          <property name="text">
+-        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The projects that make Lichii possible&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
++        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The projects that make Nyx2 possible&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          </property>
+         </widget>
+        </item>
+diff --git a/src/yuzu/game/game_list.cpp b/src/yuzu/game/game_list.cpp
+index 76b4694..ecc631d 100644
+--- a/src/yuzu/game/game_list.cpp
++++ b/src/yuzu/game/game_list.cpp
+@@ -560,9 +560,7 @@ void GameList::AddGamePopup(QMenu& context_menu, u64 program_id, const std::stri
+     }
+     QAction* properties = context_menu.addAction(tr("Configure Game"));
+     if (program_id != 0 && program_id == reportable_program_id) {
+-        auto* report = context_menu.addAction(tr("Submit compatibility report…"));
+-        connect(report, &QAction::triggered, this,
+-                [this, program_id] { emit ReportCompatibilityRequested(program_id); });
++        // Nyx2 v1: relatorios de compatibilidade desativados (servidor do fork original).
+     }
+ 
+     favorite->setVisible(program_id != 0);
+diff --git a/src/yuzu/main.cpp b/src/yuzu/main.cpp
+index cacdbf1..624b802 100644
+--- a/src/yuzu/main.cpp
++++ b/src/yuzu/main.cpp
+@@ -114,7 +114,7 @@ int main(int argc, char* argv[]) {
+ 
+     // Init settings params
+     QCoreApplication::setOrganizationName(QStringLiteral("eden"));
+-    QCoreApplication::setApplicationName(QStringLiteral("Lichii"));
++    QCoreApplication::setApplicationName(QStringLiteral("Nyx2"));
+ 
+     // Increases the maximum open file limit.
+     // TODO: This should be common to all frontends.
+@@ -166,7 +166,7 @@ int main(int argc, char* argv[]) {
+ 
+     // Fix the Wayland appId. This needs to match the name of the .desktop file without the .desktop
+     // suffix.
+-    QGuiApplication::setDesktopFileName(QStringLiteral("io.github.zortos293.lichii"));
++    QGuiApplication::setDesktopFileName(QStringLiteral("io.github.zortos293.nyx2"));
+ #endif
+ 
+     auto rounding_policy = GetHighDpiRoundingPolicy();
+diff --git a/src/yuzu/main.ui b/src/yuzu/main.ui
+index 5b9013e..18a62ff 100644
+--- a/src/yuzu/main.ui
++++ b/src/yuzu/main.ui
+@@ -11,11 +11,11 @@
+    </rect>
+   </property>
+   <property name="windowTitle">
+-  <string>Lichii</string>
++  <string>Nyx2</string>
+   </property>
+   <property name="windowIcon">
+    <iconset resource="yuzu.qrc">
+-    <normaloff>:/img/lichii.ico</normaloff>:/img/lichii.ico</iconset>
++    <normaloff>:/img/nyx2.ico</normaloff>:/img/nyx2.ico</iconset>
+   </property>
+   <property name="tabShape">
+    <enum>QTabWidget::TabShape::Rounded</enum>
+@@ -59,7 +59,7 @@
+     </widget>
+     <widget class="QMenu" name="menuOpen_Eden_Folders">
+      <property name="title">
+-      <string>Open &amp;Lichii Folders</string>
++      <string>Open &amp;Nyx2 Folders</string>
+      </property>
+      <addaction name="action_Root_Data_Folder"/>
+      <addaction name="action_NAND_Folder"/>
+@@ -292,7 +292,7 @@
+   </action>
+   <action name="action_About">
+    <property name="text">
+-    <string>&amp;About Lichii</string>
++    <string>&amp;About Nyx2</string>
+    </property>
+   </action>
+   <action name="action_Single_Window_Mode">
+@@ -555,7 +555,7 @@
+   </action>
+   <action name="action_Eden_Dependencies">
+    <property name="text">
+-    <string>&amp;Lichii Dependencies</string>
++    <string>&amp;Nyx2 Dependencies</string>
+    </property>
+   </action>
+   <action name="action_Data_Manager">
+diff --git a/src/yuzu/main_window.cpp b/src/yuzu/main_window.cpp
+index c952d03..5d67e77 100644
+--- a/src/yuzu/main_window.cpp
++++ b/src/yuzu/main_window.cpp
+@@ -1961,7 +1961,7 @@ bool MainWindow::LoadROM(const QString& filename, Service::AM::FrontendAppletPar
+         case Core::SystemResultStatus::ErrorMemoryAllocation:
+             QMessageBox::critical(
+                 this, tr("Not enough memory to start the game"),
+-                tr("Lichii could not allocate the game's memory. Close other applications and "
++                tr("Nyx2 could not allocate the game's memory. Close other applications and "
+                    "check that your system has enough available memory and paging-file space, "
+                    "then try again."));
+             break;
+@@ -2065,7 +2065,7 @@ void MainWindow::BootGame(const QString& filename, Service::AM::FrontendAppletPa
+     if (close_pending) {
+         return;
+     }
+-    LOG_INFO(Frontend, "Lichii starting...");
++    LOG_INFO(Frontend, "Nyx2 starting...");
+     report_session.reset();
+     game_list->SetReportableProgramId(0);
+ 
+@@ -2110,7 +2110,7 @@ void MainWindow::BootGame(const QString& filename, Service::AM::FrontendAppletPa
+                    "Vulkan, 1x resolution, GPU Fast, asynchronous shaders, BC3, conservative VRAM, "
+                    "reactive flushing off, FIFO Relaxed VSync, handheld mode, ScaleForce, and "
+                    "FXAA.\n\n"
+-                   "They apply to Mario Kart World until Lichii is closed. Your saved settings "
++                   "They apply to Mario Kart World until Nyx2 is closed. Your saved settings "
+                    "are not changed."),
+                 QMessageBox::Yes | QMessageBox::No, QMessageBox::No) == QMessageBox::Yes;
+         LOG_INFO(Config, "MKW recommended settings accepted: {}", use_recommended_mkw_settings);
+@@ -2221,7 +2221,7 @@ void MainWindow::BootGame(const QString& filename, Service::AM::FrontendAppletPa
+         }
+         session.mods = CompatibilityReporting::SummarizeEnabledAddons(mods);
+         session.updates = CompatibilityReporting::SummarizeEnabledAddons(updates);
+-        session.build = QStringLiteral("Lichii %1 (%2)")
++        session.build = QStringLiteral("Nyx2 %1 (%2)")
+                             .arg(QString::fromUtf8(Common::g_build_version),
+                                  QString::fromUtf8(Common::g_scm_rev).left(12));
+ #ifdef ARCHITECTURE_x86_64
+@@ -4905,7 +4905,7 @@ void MainWindow::OnEmulatorUpdateAvailable() {
+     const auto result = update_future.result();
+     if (result.failure == UpdateChecker::Failure::RateLimited) {
+         statusBar()->showMessage(
+-            tr("Could not check for updates: GitHub rate limit reached. Lichii will try again at "
++            tr("Could not check for updates: GitHub rate limit reached. Nyx2 will try again at "
+                "the next start."),
+             15000);
+         return;
+@@ -4985,9 +4985,10 @@ void MainWindow::OnApplicationChanged(u64 program_id) {
+ void MainWindow::UpdateWindowTitle(std::string_view title_name, std::string_view title_version,
+                                    std::string_view gpu_vendor) {
+     static const std::string build_id = std::string{Common::g_build_id};
++    // Nyx2: titulo limpo, so nome e versao. O compilador continua no "Sobre" e no log.
+     static const std::string yuzu_title =
+-        fmt::format("{} | {} | {}", std::string{Common::g_build_name},
+-                    std::string{Common::g_build_version}, std::string{Common::g_compiler_id});
++        fmt::format("{} | {}", std::string{Common::g_build_name},
++                    std::string{Common::g_build_version});
+ 
+     const auto override_title =
+         fmt::format(fmt::runtime(std::string(Common::g_title_bar_format_idle)), build_id);
+@@ -5389,7 +5390,7 @@ void MainWindow::OnCheckGraphicsBackend() {
+         UISettings::values.gui_force_x11.SetValue(true);
+         GraphicsBackend::SetForceX11(true);
+         QMessageBox::information(this, tr("Restart Required"),
+-                                 tr("Restart Lichii to apply the X11 backend."));
++                                 tr("Restart Nyx2 to apply the X11 backend."));
+     }
+ }
+ #endif
+@@ -5508,8 +5509,8 @@ bool MainWindow::ConfirmClose() {
+         UISettings::values.confirm_before_stopping.GetValue() == ConfirmStop::Ask_Based_On_Game)
+         return true;
+ 
+-    const auto text = tr("Are you sure you want to close Lichii?");
+-    return question(this, tr("Lichii"), text);
++    const auto text = tr("Are you sure you want to close Nyx2?");
++    return question(this, tr("Nyx2"), text);
+ }
+ 
+ void MainWindow::closeEvent(QCloseEvent* event) {
+@@ -5615,7 +5616,7 @@ bool MainWindow::ConfirmChangeGame() {
+ 
+     // Use custom question to link controller navigation
+     return question(
+-        this, tr("Lichii"),
++        this, tr("Nyx2"),
+         tr("Are you sure you want to stop the emulation? Any unsaved progress will be lost."),
+         QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes);
+ }
+@@ -5624,10 +5625,10 @@ bool MainWindow::ConfirmForceLockedExit() {
+     if (QtCommon::emu_thread == nullptr)
+         return true;
+ 
+-    const auto text = tr("The currently running application has requested Lichii to not exit.\n\n"
++    const auto text = tr("The currently running application has requested Nyx2 to not exit.\n\n"
+                          "Would you like to bypass this and exit anyway?");
+ 
+-    return question(this, tr("Lichii"), text);
++    return question(this, tr("Nyx2"), text);
+ }
+ 
+ void MainWindow::RequestGameExit() {
+diff --git a/src/yuzu/nx_tools.cpp b/src/yuzu/nx_tools.cpp
+index 7d483e8..ba838bf 100644
+--- a/src/yuzu/nx_tools.cpp
++++ b/src/yuzu/nx_tools.cpp
+@@ -761,7 +761,7 @@ void NxTools::EditNxMetadata(const std::string& archive_path) {
+     }
+     if (!new_icon.isEmpty()) {
+         job->icon_file = std::make_unique<QTemporaryFile>(
+-            QDir::tempPath() + QStringLiteral("/lichii-icon-XXXXXX.jpg"));
++            QDir::tempPath() + QStringLiteral("/nyx2-icon-XXXXXX.jpg"));
+         if (!job->icon_file->open() || job->icon_file->write(new_icon) != new_icon.size() ||
+             !job->icon_file->flush()) {
+             QMessageBox::warning(parent_widget, title, tr("The icon cannot be saved."));
+diff --git a/src/yuzu/ryujinx_dialog.ui b/src/yuzu/ryujinx_dialog.ui
+index 2dc80a7..9a07a36 100644
+--- a/src/yuzu/ryujinx_dialog.ui
++++ b/src/yuzu/ryujinx_dialog.ui
+@@ -23,9 +23,9 @@
+       </sizepolicy>
+      </property>
+      <property name="text">
+-      <string>Linking save data to Ryujinx lets both Ryujinx and Lichii reference the same save files for your games.
++      <string>Linking save data to Ryujinx lets both Ryujinx and Nyx2 reference the same save files for your games.
+ 
+-By selecting &quot;From Lichii&quot;, previous save data stored in Ryujinx will be deleted, and vice versa for &quot;From Ryujinx&quot;.</string>
++By selecting &quot;From Nyx2&quot;, previous save data stored in Ryujinx will be deleted, and vice versa for &quot;From Ryujinx&quot;.</string>
+      </property>
+      <property name="wordWrap">
+       <bool>true</bool>
+@@ -37,7 +37,7 @@ By selecting &quot;From Lichii&quot;, previous save data stored in Ryujinx will
+      <item>
+       <widget class="QPushButton" name="eden">
+        <property name="text">
+-      <string>From Lichii</string>
++      <string>From Nyx2</string>
+        </property>
+       </widget>
+      </item>
+diff --git a/src/yuzu/shader_warm_dialog.cpp b/src/yuzu/shader_warm_dialog.cpp
+index f04e13b..3cd2d38 100644
+--- a/src/yuzu/shader_warm_dialog.cpp
++++ b/src/yuzu/shader_warm_dialog.cpp
+@@ -185,7 +185,7 @@ void ShaderWarmDialog::OnFinished(const ShaderWarm::Result& result, bool stopped
+         stage_label->setText(tr("Shader precache is ready."));
+         if (result.compute_programs == 0) {
+             text = result.archives == 0
+-                       ? tr("This game keeps its shaders in a format Lichii can't read, so none "
++                       ? tr("This game keeps its shaders in a format Nyx2 can't read, so none "
+                             "are prepared from the game files.")
+                        : tr("The game files have no compute shaders to prepare.");
+             text += QLatin1Char(' ') +
+diff --git a/src/yuzu/updater/update_dialog.cpp b/src/yuzu/updater/update_dialog.cpp
+index f4a56e9..d792698 100644
+--- a/src/yuzu/updater/update_dialog.cpp
++++ b/src/yuzu/updater/update_dialog.cpp
+@@ -145,9 +145,9 @@ void UpdateDialog::Restart(QWidget* window, const QString& target) {
+ bool UpdateDialog::LaunchInstaller(QWidget* window, const QString& staging) {
+     // The helper runs from a copy, because the installed one is replaced along with everything else.
+     const QString helper =
+-        QCoreApplication::applicationDirPath() + QStringLiteral("/lichii-updater.exe");
++        QCoreApplication::applicationDirPath() + QStringLiteral("/Nyx2-updater.exe");
+     const QString copy = QDir::temp().filePath(
+-        QStringLiteral("lichii-updater-%1.exe").arg(QCoreApplication::applicationPid()));
++        QStringLiteral("Nyx2-updater-%1.exe").arg(QCoreApplication::applicationPid()));
+     QFile::remove(copy);
+     if (!QFile::copy(helper, copy)) {
+         LOG_ERROR(Frontend, "Could not copy the installer helper {}", helper.toStdString());
+@@ -179,7 +179,7 @@ void UpdateDialog::Download() {
+         const std::filesystem::path exe{QCoreApplication::applicationFilePath().toStdWString()};
+         if (UpdateInstaller::CanReplace(exe) &&
+             QFile::exists(QCoreApplication::applicationDirPath() +
+-                          QStringLiteral("/lichii-updater.exe"))) {
++                          QStringLiteral("/Nyx2-updater.exe"))) {
+             InstallOnRestart(exe);
+             return;
+         }
+@@ -226,7 +226,7 @@ void UpdateDialog::InstallInPlace(const std::filesystem::path& target) {
+     const UpdateInstaller::Lock lock{UpdateInstaller::LockPath(target)};
+     if (!lock.Held()) {
+         QtCommon::Frontend::Critical(tr("Failed to install the update"),
+-                                     tr("Another Lichii window is already updating this "
++                                     tr("Another Nyx2 window is already updating this "
+                                         "installation."));
+         return;
+     }
+@@ -305,7 +305,7 @@ void UpdateDialog::InstallOnRestart(const std::filesystem::path& exe) {
+ 
+     const auto button = QtCommon::Frontend::Question(
+         tr("Update Ready"),
+-        tr("Lichii will close, install the update and start again. The previous version is "
++        tr("Nyx2 will close, install the update and start again. The previous version is "
+            "kept, and your settings and data are not changed.\n\nRestart now?"),
+         QtCommon::Frontend::Yes | QtCommon::Frontend::No);
+     if (button != QtCommon::Frontend::Yes ||
+diff --git a/src/yuzu/util/icon_search.cpp b/src/yuzu/util/icon_search.cpp
+index ebeaa07..fadb3be 100644
+--- a/src/yuzu/util/icon_search.cpp
++++ b/src/yuzu/util/icon_search.cpp
+@@ -211,7 +211,7 @@ HttpResult HttpGet(const std::string& full_url, std::chrono::steady_clock::time_
+ #ifdef YUZU_BUNDLED_OPENSSL
+         client.load_ca_cert_store(kCert, sizeof(kCert));
+ #endif
+-        httplib::Headers headers{{"User-Agent", "Lichii"}};
++        httplib::Headers headers{{"User-Agent", "Nyx2"}};
+         if (!bearer_token.empty()) {
+             headers.emplace("Authorization", "Bearer " + bearer_token);
+         }
+diff --git a/src/yuzu/yuzu.qrc b/src/yuzu/yuzu.qrc
+index 5094f13..6e84c84 100644
+--- a/src/yuzu/yuzu.qrc
++++ b/src/yuzu/yuzu.qrc
+@@ -5,6 +5,6 @@ SPDX-License-Identifier: GPL-2.0-or-later
+ 
+ <RCC>
+     <qresource prefix="/img">
+-        <file alias="lichii.ico">../../dist/lichii.ico</file>
++        <file alias="nyx2.ico">../../dist/nyx2.ico</file>
+     </qresource>
+ </RCC>
+diff --git a/src/yuzu/yuzu.rc b/src/yuzu/yuzu.rc
+index 4c2b471..a8109a0 100644
+--- a/src/yuzu/yuzu.rc
++++ b/src/yuzu/yuzu.rc
+@@ -11,7 +11,44 @@
+ // remains consistent on all systems.
+ // QT requires that the default application icon is named IDI_ICON1
+ 
+-IDI_ICON1               ICON                    "../../dist/lichii.ico"
++IDI_ICON1               ICON                    "../../dist/nyx2.ico"
++
++
++/////////////////////////////////////////////////////////////////////////////
++//
++// Version
++//
++// Manter os numeros iguais a BUILD_VERSION em CMakeModules/GenerateSCMRev.cmake.
++// O Windows exige 4 numeros em FILEVERSION; a string pode ser "v1.0".
++
++VS_VERSION_INFO VERSIONINFO
++ FILEVERSION 1,0,0,0
++ PRODUCTVERSION 1,0,0,0
++ FILEFLAGSMASK 0x3fL
++ FILEFLAGS 0x0L
++ FILEOS 0x40004L
++ FILETYPE 0x1L
++ FILESUBTYPE 0x0L
++BEGIN
++    BLOCK "StringFileInfo"
++    BEGIN
++        BLOCK "040904b0"
++        BEGIN
++            VALUE "CompanyName", "Nyx2 Project"
++            VALUE "FileDescription", "Nyx2 Emulator"
++            VALUE "FileVersion", "1.0.0.0"
++            VALUE "InternalName", "Nyx2"
++            VALUE "LegalCopyright", "GPL-3.0-or-later"
++            VALUE "OriginalFilename", "Nyx2.exe"
++            VALUE "ProductName", "Nyx2"
++            VALUE "ProductVersion", "v1.0"
++        END
++    END
++    BLOCK "VarFileInfo"
++    BEGIN
++        VALUE "Translation", 0x409, 1200
++    END
++END
+ 
+ 
+ /////////////////////////////////////////////////////////////////////////////
+diff --git a/src/yuzu_cmd/yuzu.rc b/src/yuzu_cmd/yuzu.rc
+index 84c5e1d..39e7eb1 100644
+--- a/src/yuzu_cmd/yuzu.rc
++++ b/src/yuzu_cmd/yuzu.rc
+@@ -9,7 +9,43 @@
+ 
+ // Icon with lowest ID value placed first to ensure application icon
+ // remains consistent on all systems.
+-YUZU_ICON               ICON                    "../../dist/lichii.ico"
++YUZU_ICON               ICON                    "../../dist/nyx2.ico"
++
++
++/////////////////////////////////////////////////////////////////////////////
++//
++// Version
++//
++// Mesma versao do Nyx2.exe (v1.0). Este binario e o eden-cli.
++
++VS_VERSION_INFO VERSIONINFO
++ FILEVERSION 1,0,0,0
++ PRODUCTVERSION 1,0,0,0
++ FILEFLAGSMASK 0x3fL
++ FILEFLAGS 0x0L
++ FILEOS 0x40004L
++ FILETYPE 0x1L
++ FILESUBTYPE 0x0L
++BEGIN
++    BLOCK "StringFileInfo"
++    BEGIN
++        BLOCK "040904b0"
++        BEGIN
++            VALUE "CompanyName", "Nyx2 Project"
++            VALUE "FileDescription", "Nyx2 Emulator (CLI)"
++            VALUE "FileVersion", "1.0.0.0"
++            VALUE "InternalName", "eden-cli"
++            VALUE "LegalCopyright", "GPL-3.0-or-later"
++            VALUE "OriginalFilename", "eden-cli.exe"
++            VALUE "ProductName", "Nyx2"
++            VALUE "ProductVersion", "v1.0"
++        END
++    END
++    BLOCK "VarFileInfo"
++    BEGIN
++        VALUE "Translation", 0x409, 1200
++    END
++END
+ 
+ 
+ /////////////////////////////////////////////////////////////////////////////

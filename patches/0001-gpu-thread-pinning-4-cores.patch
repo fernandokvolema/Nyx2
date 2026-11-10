@@ -1,0 +1,80 @@
+﻿diff --git a/src/common/core_pinning.cpp b/src/common/core_pinning.cpp
+index 8be5e74..c52b114 100644
+--- a/src/common/core_pinning.cpp
++++ b/src/common/core_pinning.cpp
+@@ -3,11 +3,28 @@
+ 
+ #include <algorithm>
+ #include <charconv>
++#include <cstdlib>
+ 
+ #include "common/core_pinning.h"
+ 
+ namespace Common {
+ 
++std::size_t MinPerformanceCoresForPinning() {
++    static const std::size_t threshold = [] {
++        const char* text = std::getenv("EDEN_NX2_MIN_PIN_CORES");
++        if (text == nullptr) {
++            return MinCoresForGpuThreadPinning;
++        }
++        char* end = nullptr;
++        const unsigned long parsed = std::strtoul(text, &end, 10);
++        if (end == text || parsed == 0) {
++            return MinCoresForGpuThreadPinning;
++        }
++        return static_cast<std::size_t>(parsed);
++    }();
++    return threshold;
++}
++
+ GpuThreadPinning PlanGpuThreadPinning(std::span<const LogicalProcessor> processors) {
+     GpuThreadPinning plan;
+     if (processors.empty()) {
+@@ -24,7 +41,7 @@ GpuThreadPinning PlanGpuThreadPinning(std::span<const LogicalProcessor> processo
+     std::ranges::sort(cores);
+     cores.erase(std::unique(cores.begin(), cores.end()), cores.end());
+     plan.performance_cores = cores.size();
+-    if (cores.size() < MinCoresForGpuThreadPinning) {
++    if (cores.size() < MinPerformanceCoresForPinning()) {
+         return plan;
+     }
+     const u32 front_core = cores[1];
+diff --git a/src/common/core_pinning.h b/src/common/core_pinning.h
+index 5c1f2b5..a47d31c 100644
+--- a/src/common/core_pinning.h
++++ b/src/common/core_pinning.h
+@@ -25,6 +25,11 @@ struct LogicalProcessor {
+ /// Physical cores of the fastest class needed before the GPU threads are pinned.
+ constexpr std::size_t MinCoresForGpuThreadPinning = 6;
+ 
++/// The threshold actually used, which EDEN_NX2_MIN_PIN_CORES overrides (Nyx2). Hosts with fewer
++/// physical cores than MinCoresForGpuThreadPinning, such as a 4-core Haswell, can then try the
++/// pinning without a rebuild; unset or an unparsable value keeps the compiled default.
++[[nodiscard]] std::size_t MinPerformanceCoresForPinning();
++
+ /// Logical processor ids for each pinned role. All three are empty when the host has fewer than
+ /// MinCoresForGpuThreadPinning performance cores.
+ struct GpuThreadPinning {
+diff --git a/src/common/thread.cpp b/src/common/thread.cpp
+index 4cb474b..c004511 100644
+--- a/src/common/thread.cpp
++++ b/src/common/thread.cpp
+@@ -740,7 +740,7 @@ void PinCurrentThread(PinnedRole role) {
+         if (plan.front.empty()) {
+             LOG_WARNING(Common,
+                         "GPU thread pinning skipped: {} physical performance cores, needs {}",
+-                        plan.performance_cores, MinCoresForGpuThreadPinning);
++                        plan.performance_cores, MinPerformanceCoresForPinning());
+             return PinnedCpuSets{};
+         }
+         LOG_INFO(Common,
+@@ -763,7 +763,7 @@ void PinCurrentThread(PinnedRole role) {
+         if (result.front.empty()) {
+             LOG_WARNING(Common,
+                         "GPU thread pinning skipped: {} physical performance cores, needs {}",
+-                        result.performance_cores, MinCoresForGpuThreadPinning);
++                        result.performance_cores, MinPerformanceCoresForPinning());
+         } else {
+             LOG_INFO(Common,
+                      "GPU thread pinning: front and back on a physical core each, guest cores on "

@@ -1,0 +1,35 @@
+NYX2 v1.0 - AVISOS E CREDITOS
+
+Este programa e software livre, distribuido sob a GNU General Public License
+versao 3 ou posterior (GPL-3.0-or-later).
+Texto completo da licenca: https://www.gnu.org/licenses/gpl-3.0.txt
+
+
+BASEADO EM
+- Lichii      (https://github.com/zortos293/Lichii)
+- Eden Emulator
+- yuzu Emulator Project
+
+O motor de emulacao, o kernel HLE, o renderizador Vulkan, o audio e o input sao
+codigo desses projetos, mantidos por seus autores originais.
+
+ALTERACOES LOCAIS NESTA BUILD
+- Nome, icone, versao (v1.0) e textos da interface.
+- Auto-update e checagem de atualizacoes desligados (sem contato com servidores
+  do projeto original).
+- Relatorio de compatibilidade online desativado.
+- Precisao de GPU "Fast" como padrao e pinning de nucleos ajustavel em runtime.
+- Build com clang-cl 22 + ThinLTO + PGO + -march=haswell.
+
+
+MARCAS
+"Nintendo", "Switch" e "Switch 2" sao marcas registradas da Nintendo.
+Este projeto nao e afiliado, patrocinado nem endossado pela Nintendo.
+
+O pacote NAO inclui chaves, firmware nem jogos. Nos nao apoiamos nem
+incentivamos pirataria: use apenas conteudo do seu proprio console.
+
+
+GARANTIAS
+Este software e fornecido "como esta", sem garantia de qualquer tipo, expressa
+ou implicita. O uso e por sua conta e risco.

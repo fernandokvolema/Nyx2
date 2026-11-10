@@ -1,0 +1,2 @@
+# Patches precisam ficar byte-a-byte como foram gerados (fins de linha inclusos).
+*.patch -text

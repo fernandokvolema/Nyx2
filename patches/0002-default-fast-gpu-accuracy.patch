@@ -1,0 +1,16 @@
+﻿diff --git a/src/common/settings.h b/src/common/settings.h
+index 5e709f9..180f3b6 100644
+--- a/src/common/settings.h
++++ b/src/common/settings.h
+@@ -548,11 +548,7 @@ struct Values {
+                                          linkage, 0, "bg_blue", Category::Renderer, Specialization::Default, true, true};
+ 
+     SwitchableSetting<GpuAccuracy, true> gpu_accuracy{linkage,
+-#ifdef __ANDROID__
+                                                       GpuAccuracy::Low,
+-#else
+-                                                      GpuAccuracy::High,
+-#endif
+                                                       "gpu_accuracy",
+                                                       Category::RendererAdvanced,
+                                                       Specialization::Default,
